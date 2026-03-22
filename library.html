@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Library — Claryxa</title>
+<script src="auth.js"></script>
+<script>requireAuth();</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+
+
+
+<style>
+:root {
+  --bg:             #000000;
+  --surface:        #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --surface-high:   #3a3a3c;
+  --border:         rgba(255, 255, 255, 0.08);
+  --separator:      rgba(255, 255, 255, 0.05);
+  --border-focus:   rgba(10, 132, 255, 0.55);
+  --text-primary:   #ffffff;
+  --text-secondary: #8e8e93;
+  --text-tertiary:  #48484a;
+  --accent:         #0a84ff;
+  --accent-hover:   #2c9aff;
+  --accent-dim:     rgba(10, 132, 255, 0.14);
+  --green:          #30d158;
+  --red:            #ff453a;
+  --orange:         #ff9f0a;
+  --font:         -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --ease: 0.18s cubic-bezier(.4,0,.2,1);
+
+  --sidebar-collapsed: 104px;
+  --sidebar-expanded:  240px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text-primary);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;display:flex;gap:24px;padding:24px 36px;min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:9999px;}
+
+#sidebar{width:var(--sidebar-collapsed);flex-shrink:0;transition:width 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;background:var(--surface);border-radius:18px;border:1px solid var(--border);position:sticky;top:24px;height:calc(100vh - 48px);z-index:50;display:flex;flex-direction:column;padding:24px 0 20px 0;cursor:pointer;}
+#sidebar.expanded{width:var(--sidebar-expanded);}
+.brand-name{
+  opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, width 0.3s ease;
+  font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -0.02em;
+}
+#sidebar.expanded .brand-name{opacity:1;width:auto;}
+.sidebar-label{
+  opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, width 0.3s ease;
+  font-size: 14px; font-weight: 500; color: inherit;
+}
+#sidebar.expanded .sidebar-label{opacity:1;width:auto;}
+.nav-item{
+  display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0;
+  border-radius: var(--radius-md); width: 100%; background: transparent; border: none;
+  color: var(--text-tertiary); cursor: pointer; white-space: nowrap; height: 44px;
+  transition: background var(--ease), color var(--ease);
+}
+.nav-item:hover{color:var(--text-primary);} .nav-item.active{color:var(--accent);}
+.nav-icon-pill{
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;
+  transition: background var(--ease);
+}
+.nav-item:hover .nav-icon-pill{background:var(--surface-raised);} .nav-item.active .nav-icon-pill{background:var(--accent-dim);color:var(--accent);}
+#sidebar.expanded .nav-item{padding:0 10px;justify-content:flex-start;}
+#sidebar.expanded .nav-icon-pill{width:32px;height:32px;border-radius:9px;}
+
+#main-content{flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:12px;height:calc(100vh - 48px);overflow:hidden;}
+.topbar{height:80px;background:var(--surface);border-radius:18px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;flex-shrink:0;}
+.topbar-title{font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:-0.02em;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.search-wrap{position:relative;display:flex;align-items:center;}
+.search-wrap i{position:absolute;left:12px;color:var(--text-tertiary);font-size:12px;pointer-events:none;}
+.search-wrap input{background:var(--surface-raised);border:none;border-radius:var(--radius-full);padding:7px 14px 7px 32px;width:220px;color:var(--text-primary);font-size:13px;outline:none;font-family:var(--font);transition:box-shadow var(--ease);}
+.search-wrap input:focus{box-shadow:0 0 0 2px var(--border-focus);}
+.search-wrap input::placeholder{color:var(--text-tertiary);}
+.icon-btn{width:36px;height:36px;border-radius:var(--radius-md);background:none;border:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;transition:background var(--ease),color var(--ease);}
+.icon-btn:hover{background:var(--surface-raised);color:var(--text-primary);}
+/* ════════════════════
+   ACCOUNT DROPDOWN
+════════════════════ */
+.account-wrap {
+  position: relative;
+}
+.account-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 210px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  z-index: 300;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
+  animation: dropFade 0.16s cubic-bezier(.4,0,.2,1);
+}
+.account-dropdown.open { display: block; }
+@keyframes dropFade {
+  from { opacity:0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity:1; transform: translateY(0)    scale(1); }
+}
+/* small arrow pointing up */
+.account-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -5px; right: 12px;
+  width: 9px; height: 9px;
+  background: var(--surface-raised);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+.acc-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 8px 10px;
+  border-bottom: 1px solid var(--separator);
+  margin-bottom: 4px;
+}
+.acc-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1.5px solid rgba(10,132,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.acc-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.acc-email { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+
+.acc-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+}
+.acc-item:hover { background: var(--surface-high); color: var(--text-primary); }
+.acc-item.danger { color: var(--red); }
+.acc-item.danger:hover { background: rgba(255,69,58,0.1); color: var(--red); }
+.acc-item i { width: 14px; text-align: center; font-size: 12px; flex-shrink: 0; }
+
+.lib-body{flex:1;display:flex;gap:12px;overflow:hidden;min-height:0;}
+.lib-nav{width:196px;flex-shrink:0;background:var(--bg);border-radius:var(--radius-xl);border:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:12px 8px;}
+.lib-nav-section{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-tertiary);padding:10px 8px 5px;}
+.lib-nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-md);cursor:pointer;transition:background var(--ease),color var(--ease);user-select:none;border:none;background:none;width:100%;text-align:left;color:var(--text-secondary);font-size:13px;font-family:var(--font);}
+.lib-nav-item:hover{background:var(--surface-raised);color:var(--text-primary);}
+.lib-nav-item.active{background:var(--surface-raised);color:var(--text-primary);font-weight:500;}
+.lib-nav-item.active .lni-icon{color:var(--accent);}
+.lni-icon{color:var(--text-tertiary);font-size:13px;display:flex;flex-shrink:0;transition:color var(--ease);}
+.lni-label{flex:1;} .lni-count{font-size:11px;color:var(--text-tertiary);}
+.lib-sep{height:1px;background:var(--separator);margin:5px 4px;}
+
+.tree-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background var(--ease),color var(--ease);user-select:none;width:100%;border:none;background:none;font-family:var(--font);text-align:left;}
+.tree-row:hover{background:var(--surface-raised);color:var(--text-primary);}
+.tree-caret{color:var(--text-tertiary);font-size:9px;transition:transform var(--ease);flex-shrink:0;width:10px;display:flex;align-items:center;}
+.tree-caret.open{transform:rotate(90deg);}
+.tree-children{display:flex;flex-direction:column;}
+.tree-child-row{display:flex;align-items:center;padding:6px 8px 6px 30px;border-radius:var(--radius-md);cursor:pointer;font-size:12px;color:var(--text-tertiary);transition:background var(--ease),color var(--ease);border:none;background:none;font-family:var(--font);text-align:left;width:100%;}
+.tree-child-row:hover{background:var(--surface-raised);color:var(--text-secondary);}
+.tree-folder-icon{border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tfi-orange{background:rgba(255,159,10,0.14);color:var(--orange);}
+.tfi-blue{background:rgba(10,132,255,0.14);color:var(--accent);}
+.tfi-green{background:rgba(48,209,88,0.13);color:var(--green);}
+.tfi-purple{background:rgba(191,90,242,0.14);color:#bf5af2;}
+.tfi-red{background:rgba(255,69,58,0.14);color:var(--red);}
+
+.lib-content{flex:1;background:var(--bg);border-radius:var(--radius-xl);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.lib-content-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--separator);flex-shrink:0;gap:10px;}
+.breadcrumb{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-secondary);min-width:0;flex:1;}
+.breadcrumb-sep{color:var(--text-tertiary);}
+.breadcrumb span:last-child{color:var(--text-primary);font-weight:500;}
+.breadcrumb span:not(:last-child):hover{color:var(--text-primary);cursor:pointer;}
+.lib-toolbar{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.sort-sel{background:var(--surface-raised);border:none;border-radius:var(--radius-md);padding:6px 12px;font-family:var(--font);font-size:12px;color:var(--text-secondary);outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;}
+.tb-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--font);font-size:12px;font-weight:500;border:none;cursor:pointer;border-radius:var(--radius-md);padding:7px 13px;transition:background var(--ease);}
+.tb-btn:active{transform:scale(0.97);}
+.tb-surface{background:var(--surface-raised);color:var(--text-primary);} .tb-surface:hover{background:var(--surface-high);}
+.tb-primary{background:var(--accent);color:#fff;} .tb-primary:hover{background:var(--accent-hover);}
+.tb-danger{background:var(--red-dim);color:var(--red);}
+.view-btn{width:30px;height:30px;border-radius:var(--radius-md);background:none;border:none;color:var(--text-tertiary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:background var(--ease),color var(--ease);}
+.view-btn:hover{background:var(--surface-raised);color:var(--text-primary);}
+.view-btn.active{background:var(--accent-dim);color:var(--accent);}
+.file-area{flex:1;overflow-y:auto;padding:16px 18px;}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.section-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-tertiary);}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;margin-bottom:22px;}
+
+.folder-card{background:var(--surface);border-radius:var(--radius-lg);padding:13px;cursor:pointer;position:relative;border:1px solid var(--border);transition:background var(--ease),transform var(--ease);}
+.folder-card:hover{background:var(--surface-raised);}
+.folder-card:active{transform:scale(0.98);}
+.folder-icon{width:44px;height:44px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.fi-orange{background:rgba(255,159,10,0.14);color:var(--orange);}
+.fi-blue{background:rgba(10,132,255,0.14);color:var(--accent);}
+.fi-green{background:rgba(48,209,88,0.13);color:var(--green);}
+.fi-purple{background:rgba(191,90,242,0.14);color:#bf5af2;}
+.fi-red{background:rgba(255,69,58,0.14);color:var(--red);}
+.folder-name{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.folder-meta{font-size:11px;color:var(--text-tertiary);}
+
+.file-card{background:var(--surface);border-radius:var(--radius-lg);padding:13px;cursor:pointer;position:relative;overflow:hidden;transition:background var(--ease),transform var(--ease);border:1px solid var(--border);}
+.file-card:hover{background:var(--surface-raised);}
+.file-card:active{transform:scale(0.98);}
+.file-type{display:inline-flex;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.04em;margin-bottom:9px;background:rgba(142,142,147,0.14);color:var(--text-secondary);}
+.file-name{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-meta{font-size:11px;color:var(--text-tertiary);margin-bottom:7px;}
+.file-tags{display:flex;gap:4px;flex-wrap:wrap;}
+.ftag{font-size:10px;font-weight:500;padding:2px 7px;border-radius:var(--radius-full);background:rgba(142,142,147,0.14);color:var(--text-secondary);}
+.ftag-important{background:rgba(10,132,255,0.12);color:var(--accent);}
+.hover-ai{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,var(--surface-raised) 55%,transparent);padding:18px 7px 7px;display:flex;gap:4px;justify-content:center;opacity:0;transition:opacity var(--ease);}
+.file-card:hover .hover-ai{opacity:1;}
+.ai-pill{font-size:10px;font-weight:600;padding:3px 8px;border-radius:var(--radius-full);background:rgba(10,132,255,0.18);color:var(--accent);border:none;cursor:pointer;font-family:var(--font);transition:background var(--ease),color var(--ease);}
+.ai-pill:hover{background:var(--accent);color:#fff;}
+.star-btn{position:absolute;top:9px;right:9px;background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:11px;opacity:0;transition:color var(--ease),opacity var(--ease);}
+.file-card:hover .star-btn,.folder-card:hover .star-btn{opacity:1;}
+.star-btn.starred{color:var(--yellow);opacity:1;}
+.star-btn:hover{color:var(--yellow);}
+.new-folder-card{background:transparent;border:1.5px dashed var(--surface-high);border-radius:var(--radius-lg);padding:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;transition:border-color var(--ease),background var(--ease);color:var(--text-tertiary);font-size:12px;}
+.new-folder-card:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+.inline-rename{background:var(--surface-high);border:1px solid var(--accent);border-radius:5px;padding:2px 6px;font-size:13px;font-weight:500;color:var(--text-primary);font-family:var(--font);outline:none;width:100%;caret-color:var(--accent);letter-spacing:-0.01em;}
+.inline-rename-sm{font-size:12px;padding:1px 5px;}
+
+.list-view{display:flex;flex-direction:column;gap:2px;margin-bottom:22px;}
+.list-row{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:var(--radius-md);cursor:pointer;transition:background var(--ease);}
+.list-row:hover{background:var(--surface-raised);}
+.list-type-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;background:rgba(142,142,147,0.14);color:var(--text-secondary);}
+.list-name{flex:1;font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-date{font-size:11px;color:var(--text-tertiary);white-space:nowrap;}
+.list-size{font-size:11px;color:var(--text-tertiary);width:50px;text-align:right;}
+
+.right-panel{width:276px;flex-shrink:0;background:var(--bg);border-radius:var(--radius-xl);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width var(--ease),opacity var(--ease);}
+.right-panel.hidden{width:0;opacity:0;border:none;}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--separator);flex-shrink:0;}
+.panel-title{font-size:14px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.panel-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;}
+.preview-box{background:var(--surface-raised);border-radius:var(--radius-lg);height:152px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.preview-icon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(142,142,147,0.14);}
+.panel-section{display:flex;flex-direction:column;gap:6px;}
+.panel-sec-title{font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-tertiary);}
+.meta-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--separator);}
+.meta-row:last-child{border-bottom:none;}
+.meta-key{color:var(--text-tertiary);} .meta-val{color:var(--text-secondary);}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.action-tile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 6px;border-radius:var(--radius-md);background:var(--surface-raised);cursor:pointer;border:none;font-family:var(--font);transition:background var(--ease);}
+.action-tile:hover{background:var(--surface-high);}
+.action-tile.danger .at-icon{color:var(--red);} .action-tile.danger .at-label{color:var(--red);}
+.at-icon{color:var(--text-secondary);font-size:13px;} .at-label{font-size:11px;color:var(--text-secondary);font-weight:500;}
+.ai-panel-box{background:var(--accent-dim);border-radius:var(--radius-lg);padding:12px;}
+.ai-panel-hdr{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.ai-panel-label{font-size:12px;font-weight:600;color:var(--accent);}
+.ai-action-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-md);background:rgba(10,132,255,0.1);cursor:pointer;border:none;font-family:var(--font);transition:background var(--ease);text-align:left;margin-bottom:5px;width:100%;}
+.ai-action-row:last-child{margin-bottom:0;} .ai-action-row:hover{background:rgba(10,132,255,0.2);}
+.ai-action-icon{color:var(--accent);font-size:12px;flex-shrink:0;}
+.ai-action-name{font-size:12px;font-weight:500;color:var(--accent);display:block;}
+.ai-action-sub{font-size:10px;color:rgba(10,132,255,0.6);display:block;}
+.mini-chat-wrap{display:flex;flex-direction:column;gap:7px;}
+.chat-bubble{background:var(--surface-raised);border-radius:10px 10px 10px 2px;padding:8px 11px;font-size:12px;color:var(--text-secondary);line-height:1.5;display:none;}
+.chat-row{display:flex;gap:6px;}
+.chat-input{flex:1;background:var(--surface-raised);border:none;border-radius:var(--radius-full);padding:8px 13px;font-family:var(--font);font-size:12px;color:var(--text-primary);outline:none;transition:box-shadow var(--ease);}
+.chat-input:focus{box-shadow:0 0 0 2px var(--border-focus);}
+.chat-input::placeholder{color:var(--text-tertiary);}
+.chat-send{width:32px;height:32px;background:var(--accent);border:none;border-radius:var(--radius-full);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:background var(--ease);}
+.chat-send:hover{background:var(--accent-hover);}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity var(--ease);}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface-raised);border-radius:var(--radius-xl);padding:24px;width:420px;max-width:calc(100vw - 40px);transform:scale(0.96);transition:transform var(--ease);border:1px solid var(--border);}
+.modal-overlay.open .modal{transform:scale(1);}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-title{font-size:17px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.02em;}
+.modal-input{width:100%;background:var(--surface-high);border:none;border-radius:var(--radius-md);padding:11px 14px;font-family:var(--font);font-size:14px;color:var(--text-primary);outline:none;transition:box-shadow var(--ease);margin-bottom:16px;}
+.modal-input:focus{box-shadow:0 0 0 2px var(--border-focus);}
+.modal-input::placeholder{color:var(--text-tertiary);}
+.modal-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+.drop-zone{border:1.5px dashed var(--surface-high);border-radius:var(--radius-lg);padding:36px 20px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color var(--ease),background var(--ease);text-align:center;margin-bottom:14px;}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-dim);}
+.drop-title{font-size:14px;font-weight:500;}
+.drop-sub{font-size:12px;color:var(--text-tertiary);}
+.format-row{display:flex;gap:5px;justify-content:center;margin-top:4px;}
+.fmt-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--radius-full);background:var(--surface-high);color:var(--text-tertiary);letter-spacing:0.05em;}
+.upload-progress{display:none;flex-direction:column;gap:8px;}
+.up-row{display:flex;justify-content:space-between;}
+.up-name{font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.up-status{font-size:11px;color:var(--text-tertiary);white-space:nowrap;}
+.progress-track{height:3px;background:var(--surface-high);border-radius:9999px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:9999px;width:0;transition:width 0.35s ease;}
+.up-msg{font-size:11px;color:var(--text-tertiary);}
+
+.color-picker{display:flex;gap:8px;margin-bottom:16px;}
+.color-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color var(--ease),transform var(--ease);}
+.color-dot:hover{transform:scale(1.1);}
+.color-dot.selected{border-color:rgba(255,255,255,0.7);}
+
+.folder-option{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-md);cursor:pointer;transition:background var(--ease);font-size:13px;color:var(--text-secondary);border:none;background:none;font-family:var(--font);width:100%;text-align:left;}
+.folder-option:hover{background:var(--surface-high);color:var(--text-primary);}
+.folder-option.selected{background:var(--accent-dim);color:var(--accent);}
+
+.ctx-menu{position:fixed;background:var(--surface-raised);border-radius:var(--radius-lg);padding:6px;min-width:180px;z-index:300;opacity:0;pointer-events:none;transform:scale(0.95);transform-origin:top left;transition:opacity 0.12s ease,transform 0.12s ease;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid var(--border);}
+.ctx-menu.open{opacity:1;pointer-events:all;transform:scale(1);}
+.ctx-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background var(--ease),color var(--ease);font-family:var(--font);}
+.ctx-item:hover{background:var(--surface-high);color:var(--text-primary);}
+.ctx-item.danger{color:var(--red);} .ctx-item.danger:hover{background:var(--red-dim);}
+.ctx-sep{height:1px;background:var(--separator);margin:4px 0;}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-full);padding:9px 18px;font-size:13px;z-index:500;opacity:0;transition:opacity 0.2s ease,transform 0.2s ease;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:55%;gap:12px;color:var(--text-tertiary);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.afu{animation:fadeUp 0.2s cubic-bezier(.4,0,.2,1) both;}
+</style>
+
+<style>
+  body {
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  body.page-loaded {
+    opacity: 1;
+  }
+</style>
+<script src="transitions.js"></script>
+
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar">
+
+  <!-- Logo -->
+  <div style="display:flex;align-items:center;justify-content:center;padding:0 0 var(--space-5) 0;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <!-- Claryxa C-mark -->
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <circle cx="18" cy="18" r="17" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <path d="M26 10.5 A11 11 0 1 0 26 25.5" stroke="white" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <circle cx="26" cy="10.5" r="2.2" fill="white"/>
+        <circle cx="26" cy="25.5" r="2.2" fill="#0a84ff"/>
+        <line x1="14" y1="18" x2="20" y2="18" stroke="#0a84ff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">Claryxa</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav style="display:flex;flex-direction:column;gap:2px;padding:0 var(--space-2);flex-grow:1;">
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='dashboard.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-home"></i></span>
+      <span class="sidebar-label">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='library.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-book-open"></i></span>
+      <span class="sidebar-label">My Courses</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='tasks.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-tasks"></i></span>
+      <span class="sidebar-label">Tasks</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='calendar.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-calendar-alt"></i></span>
+      <span class="sidebar-label">Calendar</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='assistant.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-brain"></i></span>
+      <span class="sidebar-label">Ask Claryo</span>
+    </button>
+  </nav>
+
+  <!-- Bottom -->
+  <div style="display:flex;flex-direction:column;gap:2px;padding:0 var(--space-2);">
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='settings.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-cog"></i></span>
+      <span class="sidebar-label">Settings</span>
+    </button>
+    <button class="nav-item" style="color:var(--red)!important;" onclick="setActive(this)">
+      <span class="nav-icon-pill" style="color:var(--red);"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="sidebar-label" style="color:var(--red);">Logout</span>
+    </button>
+  </div>
+
+</aside>
+
+<main id="main-content">
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="topbar-title">My Courses</span>
+    <div class="topbar-right">
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input id="searchInput" placeholder="Search files and folders…" type="text" oninput="renderAll()"/>
+      </div>
+      <button class="icon-btn">
+        <i class="fas fa-bell"></i>
+        <span class="notif-dot"></span>
+      </button>
+      <!-- Account button + dropdown -->
+      <div class="account-wrap">
+        <button class="icon-btn" id="accountBtn" onclick="toggleAccount()" title="Account">
+          <i class="fas fa-user-circle" style="font-size:17px;"></i>
+        </button>
+        <div class="account-dropdown" id="accountDropdown">
+          <div id="accLoggedIn" style="display:none;">
+            <div class="acc-profile">
+              <div class="acc-avatar" id="accInitial">A</div>
+              <div>
+                <div class="acc-name" id="accName">Anshu</div>
+                <div class="acc-email" id="accEmail">anshu@example.com</div>
+              </div>
+            </div>
+            <button class="acc-item" onclick="goProfile()">
+              <i class="fas fa-user"></i> Profile
+            </button>
+            <button class="acc-item danger" onclick="signOut()">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </div>
+          <div id="accLoggedOut">
+            <button class="acc-item" onclick="signIn()">
+              <i class="fas fa-sign-in-alt"></i> Sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="lib-body">
+    <div class="lib-nav" id="libNav">
+      <button class="lib-nav-item active" onclick="setNavView(this,'all')">
+        <span class="lni-icon"><i class="fas fa-th-large"></i></span>
+        <span class="lni-label">All Files</span>
+        <span class="lni-count" id="countAll">0</span>
+      </button>
+      <button class="lib-nav-item" onclick="setNavView(this,'recent')">
+        <span class="lni-icon"><i class="fas fa-clock"></i></span>
+        <span class="lni-label">Recent</span>
+      </button>
+      <button class="lib-nav-item" onclick="setNavView(this,'favorites')">
+        <span class="lni-icon"><i class="fas fa-star"></i></span>
+        <span class="lni-label">Favorites</span>
+      </button>
+      <div class="lib-sep"></div>
+      <div class="lib-nav-section">Subjects</div>
+      <div id="subjectTree"></div>
+      <div class="lib-sep" style="margin-top:auto;"></div>
+      <button class="lib-nav-item" onclick="setNavView(this,'trash')">
+        <span class="lni-icon"><i class="fas fa-trash-alt"></i></span>
+        <span class="lni-label">Trash</span>
+        <span class="lni-count" id="countTrash"></span>
+      </button>
+    </div>
+
+    <div class="lib-content">
+      <div class="lib-content-hdr">
+        <div class="breadcrumb" id="breadcrumb"><span>My Library</span></div>
+        <div class="lib-toolbar">
+          <button class="tb-btn tb-surface" onclick="openUpload()"><i class="fas fa-upload" style="font-size:11px;"></i> Upload</button>
+          <button class="tb-btn tb-primary" onclick="openNewFolder()"><i class="fas fa-plus" style="font-size:11px;"></i> New Folder</button>
+          <div style="width:1px;height:18px;background:var(--separator);margin:0 2px;"></div>
+          <select class="sort-sel" id="sortSel" onchange="renderAll()">
+            <option value="date">Sort: Date</option>
+            <option value="name">Sort: Name</option>
+            <option value="size">Sort: Size</option>
+          </select>
+          <button class="view-btn active" id="gridBtn" onclick="setGridView('grid')" title="Grid"><i class="fas fa-th"></i></button>
+          <button class="view-btn" id="listBtn" onclick="setGridView('list')" title="List"><i class="fas fa-list"></i></button>
+        </div>
+      </div>
+      <div class="file-area" id="fileArea"></div>
+    </div>
+
+    <div class="right-panel hidden" id="rightPanel">
+      <div class="panel-hdr">
+        <span class="panel-title" id="panelTitle">File</span>
+        <button class="icon-btn" onclick="closePanel()" style="width:28px;height:28px;font-size:12px;flex-shrink:0;"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="panel-body">
+        <div class="preview-box">
+          <div class="preview-icon"><span id="previewType" style="font-size:12px;font-weight:700;color:var(--text-secondary);">PDF</span></div>
+          <span style="font-size:11px;color:var(--text-tertiary);">Click Open to view</span>
+        </div>
+        <div class="panel-section">
+          <div class="panel-sec-title">Details</div>
+          <div class="meta-row"><span class="meta-key">Location</span><span class="meta-val" id="metaLocation">—</span></div>
+          <div class="meta-row"><span class="meta-key">Added</span><span class="meta-val" id="metaDate">—</span></div>
+          <div class="meta-row"><span class="meta-key">Size</span><span class="meta-val" id="metaSize">—</span></div>
+          <div class="meta-row"><span class="meta-key">Tags</span><span class="meta-val" id="metaTags">—</span></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-sec-title">Actions</div>
+          <div class="action-grid">
+            <button class="action-tile" onclick="panelRename()"><span class="at-icon"><i class="fas fa-pen"></i></span><span class="at-label">Rename</span></button>
+            <button class="action-tile" onclick="panelMove()"><span class="at-icon"><i class="fas fa-arrows-alt"></i></span><span class="at-label">Move</span></button>
+            <button class="action-tile" onclick="showToast('Download started')"><span class="at-icon"><i class="fas fa-download"></i></span><span class="at-label">Download</span></button>
+            <button class="action-tile danger" onclick="panelDelete()"><span class="at-icon"><i class="fas fa-trash-alt"></i></span><span class="at-label">Delete</span></button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="ai-panel-box">
+            <div class="ai-panel-hdr"><div class="ai-dot"></div><span class="ai-panel-label">Claryxa AI</span></div>
+            <button class="ai-action-row" onclick="triggerAI('summarize',activePanelFileId)"><span class="ai-action-icon"><i class="fas fa-file-alt"></i></span><span><span class="ai-action-name">Generate Summary</span><span class="ai-action-sub">Concise overview</span></span></button>
+            <button class="ai-action-row" onclick="triggerAI('quiz',activePanelFileId)"><span class="ai-action-icon"><i class="fas fa-question-circle"></i></span><span><span class="ai-action-name">Generate Quiz</span><span class="ai-action-sub">Test your understanding</span></span></button>
+            <button class="ai-action-row" onclick="triggerAI('explain',activePanelFileId)"><span class="ai-action-icon"><i class="fas fa-clone"></i></span><span><span class="ai-action-name">Create Flashcards</span><span class="ai-action-sub">Build a revision deck</span></span></button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-sec-title">Ask AI about this file</div>
+          <div class="mini-chat-wrap">
+            <div class="chat-bubble" id="chatBubble"></div>
+            <div class="chat-row">
+              <input class="chat-input" id="chatInput" placeholder="Ask anything about this doc…" onkeydown="if(event.key==='Enter')sendChat()"/>
+              <button class="chat-send" onclick="sendChat()"><i class="fas fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay" id="uploadModal" onclick="if(event.target===this)closeUpload()">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title">Upload Files</span><button class="icon-btn" onclick="closeUpload()" style="width:28px;height:28px;font-size:12px;"><i class="fas fa-times"></i></button></div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+      <i class="fas fa-cloud-upload-alt" style="font-size:26px;color:var(--text-tertiary);"></i>
+      <div class="drop-title">Drop files here</div>
+      <div class="drop-sub">or click to browse</div>
+      <div class="format-row"><span class="fmt-tag">PDF</span><span class="fmt-tag">PPT</span><span class="fmt-tag">DOCX</span><span class="fmt-tag">TXT</span></div>
+    </div>
+    <input type="file" id="fileInput" multiple style="display:none" onchange="handleFileSelect(event)"/>
+    <div class="upload-progress" id="uploadProgress">
+      <div class="up-row"><span class="up-name" id="uploadFileName">document.pdf</span><span class="up-status" id="uploadStatus">Uploading…</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="up-msg" id="processingMsg"></div>
+    </div>
+    <div class="modal-acts">
+      <button class="tb-btn tb-surface" onclick="closeUpload()">Cancel</button>
+      <button class="tb-btn tb-primary" onclick="simulateUpload()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW/EDIT FOLDER MODAL -->
+<div class="modal-overlay" id="folderModal" onclick="if(event.target===this)closeFolderModal()">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title" id="folderModalTitle">New Folder</span><button class="icon-btn" onclick="closeFolderModal()" style="width:28px;height:28px;font-size:12px;"><i class="fas fa-times"></i></button></div>
+    <input class="modal-input" id="folderNameInput" placeholder="Folder name…" onkeydown="if(event.key==='Enter')confirmFolder()"/>
+    <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px;">Color</div>
+    <div class="color-picker" id="colorPicker">
+      <div class="color-dot selected" data-color="orange" style="background:var(--orange);" onclick="selectColor(this)"></div>
+      <div class="color-dot" data-color="blue" style="background:var(--accent);" onclick="selectColor(this)"></div>
+      <div class="color-dot" data-color="green" style="background:var(--green);" onclick="selectColor(this)"></div>
+      <div class="color-dot" data-color="purple" style="background:#bf5af2;" onclick="selectColor(this)"></div>
+      <div class="color-dot" data-color="red" style="background:var(--red);" onclick="selectColor(this)"></div>
+    </div>
+    <div class="modal-acts">
+      <button class="tb-btn tb-surface" onclick="closeFolderModal()">Cancel</button>
+      <button class="tb-btn tb-primary" onclick="confirmFolder()" id="folderConfirmBtn">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOVE MODAL -->
+<div class="modal-overlay" id="moveModal" onclick="if(event.target===this)closeMove()">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title">Move to…</span><button class="icon-btn" onclick="closeMove()" style="width:28px;height:28px;font-size:12px;"><i class="fas fa-times"></i></button></div>
+    <div id="moveFolderList" style="display:flex;flex-direction:column;gap:3px;max-height:260px;overflow-y:auto;margin-bottom:16px;padding:4px 0;"></div>
+    <div class="modal-acts">
+      <button class="tb-btn tb-surface" onclick="closeMove()">Cancel</button>
+      <button class="tb-btn tb-primary" onclick="confirmMove()">Move Here</button>
+    </div>
+  </div>
+</div>
+
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" id="ctxOpenItem" onclick="ctxAction('open')"><i class="fas fa-external-link-alt" style="width:13px;"></i> <span id="ctxOpenLabel">Open</span></div>
+  <div class="ctx-item" onclick="ctxAction('rename')"><i class="fas fa-pen" style="width:13px;"></i> Rename</div>
+  <div class="ctx-item" id="ctxEditColorItem" onclick="ctxAction('editfolder')" style="display:none;"><i class="fas fa-palette" style="width:13px;"></i> Edit Color</div>
+  <div class="ctx-item" id="ctxMoveItem" onclick="ctxAction('move')"><i class="fas fa-arrows-alt" style="width:13px;"></i> Move to…</div>
+  <div class="ctx-item" onclick="ctxAction('star')"><i class="fas fa-star" style="width:13px;"></i> <span id="ctxStarLabel">Add to Favorites</span></div>
+  <div id="ctxFileOnly">
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" onclick="ctxAction('download')"><i class="fas fa-download" style="width:13px;"></i> Download</div>
+    <div class="ctx-item" onclick="ctxAction('ask')"><i class="fas fa-brain" style="width:13px;"></i> Ask AI</div>
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="ctxAction('delete')"><i class="fas fa-trash-alt" style="width:13px;"></i> Delete</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── DATA ─── */
+let folders = [];
+async function fetchFolders() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch("http://127.0.0.1:8000/folders", {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      folders = data.map(f => ({ ...f }));
+      renderAll();
+    }
+  } catch (err) { console.error(err); }
+}
+let files = [];
+
+// API helper functions
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function formatDate(dateString) {
+  const d = new Date(dateString);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function mapFileType(mimeType, fallbackName) {
+  if (!mimeType) mimeType = '';
+  if (mimeType.includes('pdf')) return 'PDF';
+  if (mimeType.includes('word') || mimeType.includes('document')) return 'DOCX';
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'PPT';
+  if (mimeType.includes('plain') || mimeType.includes('txt')) return 'TXT';
+  const ext = fallbackName.split('.').pop().toUpperCase();
+  return ext || 'FILE';
+}
+
+async function fetchDocuments() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch("http://127.0.0.1:8000/documents/", {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Failed to fetch documents");
+    const data = await res.json();
+    
+    files = data.map(doc => ({
+      id: doc.id,
+      name: doc.name,
+      type: mapFileType(doc.file_type || "", doc.name),
+      folderId: doc.folder_id || null, // Real mapping
+      date: formatDate(doc.uploaded_at),
+      size: formatBytes(doc.size_bytes || 0),
+      tags: [],
+      starred: false,
+      _raw: doc 
+    }));
+    
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    // Don't toast here as it's a page load action, just fail silently.
+  }
+}
+
+let trash = [];
+
+async function fetchTrash() {
+  const token = getToken();
+  if (!token) return;
+  trash = [];
+  try {
+    const [resFol, resDoc] = await Promise.all([
+      fetch("http://127.0.0.1:8000/folders?trashed=true", {headers:{"Authorization":`Bearer ${token}`}}),
+      fetch("http://127.0.0.1:8000/documents?trashed=true", {headers:{"Authorization":`Bearer ${token}`}})
+    ]);
+    if (resFol.ok) {
+      const foldersList = await resFol.json();
+      foldersList.forEach(f => trash.push({type: 'folder', item: f}));
+    }
+    if (resDoc.ok) {
+      const filesList = await resDoc.json();
+      filesList.forEach(f => {
+         trash.push({
+            type: 'file', 
+            item: {
+               id: f.id,
+               name: f.name,
+               type: mapFileType(f.file_type || "", f.name),
+               size: formatBytes(f.size_bytes || 0),
+               _raw: f
+            }
+         });
+      });
+    }
+    renderAll();
+  } catch(err) { console.error(err); }
+}
+
+/* ─── STATE ─── */
+let currentView = 'all';
+let gridMode    = 'grid';
+let ctxTarget   = null;
+let renameTarget= null;
+let moveTarget  = null;
+let moveSelectedFolderId = null;
+let editingFolderId = null;
+let selectedColor = 'orange';
+let activePanelFileId = null;
+
+const colorMap = {
+  orange:{fi:'fi-orange',tfi:'tfi-orange'},
+  blue:  {fi:'fi-blue',  tfi:'tfi-blue'  },
+  green: {fi:'fi-green', tfi:'tfi-green' },
+  purple:{fi:'fi-purple',tfi:'tfi-purple'},
+  red:   {fi:'fi-red',   tfi:'tfi-red'   },
+};
+
+// ── SIDEBAR TOGGLE & NAVIGATION ──
+const sidebar = document.getElementById('sidebar');
+const current = 'library';
+
+// Sidebar click to expand/collapse (but not on nav items)
+sidebar.addEventListener('click', (e) => {
+  if (e.target.closest('.nav-item')) return;
+  sidebar.classList.toggle('expanded');
+});
+
+// Set active page based on the 'current' variable
+function initActiveNav() {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const label = item.querySelector('.sidebar-label')?.textContent.trim().toLowerCase();
+    const matchLabel = label === 'my courses' ? 'library' : label;
+    const finalMatch = (matchLabel === 'ask claryo') ? 'assistant' : matchLabel;
+    if (finalMatch === current) item.classList.add('active');
+  });
+}
+
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── ACCOUNT DROPDOWN ──
+function toggleAccount() {
+  const drop = document.getElementById('accountDropdown');
+  drop.classList.toggle('open');
+}
+
+function signIn()  { alert('Sign in clicked'); }
+function signOut() { logout(); }
+function goProfile(){ alert('Profile clicked'); }
+
+// Close account dropdown if clicking outside
+window.addEventListener('click', (e) => {
+  if (!e.target.closest('.account-wrap')) {
+    const drop = document.getElementById('accountDropdown');
+    if (drop) drop.classList.remove('open');
+  }
+});
+
+
+/* ─── FOLDER SVG ─── */
+function fSVG(sz=22){ return `<svg width="${sz}" height="${sz}" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h3.93a2 2 0 011.66.9l.82 1.2A2 2 0 0013.07 8H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>`; }
+
+/* ─── SUBJECT TREE ─── */
+function renderTree(){
+  const c = document.getElementById('subjectTree');
+  const roots = folders.filter(f=>!f.parentId);
+  c.innerHTML = roots.map(f=>{
+    const kids = folders.filter(k=>k.parentId===f.id);
+    const tfi = colorMap[f.color]?.tfi||'tfi-orange';
+    const fc = countFiles(f.id);
+    return `<button class="tree-row" onclick="navigateFolder('${f.id}',event)" id="trow-${f.id}">
+      <span class="tree-caret" id="caret-${f.id}">${kids.length?`<i class="fas fa-chevron-right" style="font-size:8px;"></i>`:''}</span>
+      <span class="tree-folder-icon ${tfi}" style="width:18px;height:18px;">${fSVG(11)}</span>
+      <span style="flex:1;font-size:13px;text-align:left;">${esc(f.name)}</span>
+      <span class="lni-count">${fc||''}</span>
+    </button>
+    ${kids.length?`<div class="tree-children" id="tree-${f.id}" style="display:none;">
+      ${kids.map(k=>`<button class="tree-child-row" onclick="navigateFolder('${k.id}',event)">${esc(k.name)}</button>`).join('')}
+    </div>`:''}`;
+  }).join('');
+  document.getElementById('countAll').textContent = files.length||'';
+  document.getElementById('countTrash').textContent = trash.length||'';
+}
+
+function navigateFolder(fid, e){
+  if(e){ e.stopPropagation();
+    // toggle children if has them
+    const tree = document.getElementById('tree-'+fid);
+    const caret = document.getElementById('caret-'+fid);
+    if(tree){ tree.style.display = tree.style.display==='flex'?'none':'flex'; if(caret) caret.classList.toggle('open'); }
+  }
+  currentView = 'folder:'+fid;
+  renderAll();
+}
+
+function countFiles(fid){
+  return files.filter(f=>f.folderId===fid).length + folders.filter(f=>f.parentId===fid).reduce((a,c)=>a+countFiles(c.id),0);
+}
+
+/* ─── NAV ─── */
+function setNavView(el, view){
+  document.querySelectorAll('.lib-nav-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  currentView = view;
+  
+  if(view==='trash') fetchTrash();
+  else { fetchFolders(); fetchDocuments(); }
+  
+  renderAll();
+}
+
+/* ─── BREADCRUMB ─── */
+function renderBC(){
+  const bc = document.getElementById('breadcrumb');
+  const root = `<span onclick="setNavView(document.querySelector('.lib-nav-item'),'all')" style="cursor:pointer">My Library</span>`;
+  if(currentView==='all'){ bc.innerHTML='<span>My Library</span>'; return; }
+  if(currentView==='recent'){ bc.innerHTML=root+`<span class="breadcrumb-sep">›</span><span>Recent</span>`; return; }
+  if(currentView==='favorites'){ bc.innerHTML=root+`<span class="breadcrumb-sep">›</span><span>Favorites</span>`; return; }
+  if(currentView==='trash'){ bc.innerHTML=root+`<span class="breadcrumb-sep">›</span><span>Trash</span>`; return; }
+  if(currentView.startsWith('folder:')){
+    const fid=currentView.split(':')[1];
+    const chain=getFolderChain(fid);
+    let h=root;
+    chain.forEach((f,i)=>{
+      h+=`<span class="breadcrumb-sep">›</span>`;
+      if(i<chain.length-1) h+=`<span onclick="navigateFolder('${f.id}',null);renderAll()" style="cursor:pointer">${esc(f.name)}</span>`;
+      else h+=`<span>${esc(f.name)}</span>`;
+    });
+    bc.innerHTML=h;
+  }
+}
+function getFolderChain(fid){
+  const ch=[];let c=folders.find(f=>f.id===fid);
+  while(c){ch.unshift(c);c=c.parentId?folders.find(f=>f.id===c.parentId):null;}
+  return ch;
+}
+
+/* ─── MAIN RENDER ─── */
+function renderAll(){
+  renderBC(); renderTree();
+  const area=document.getElementById('fileArea');
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const sort=document.getElementById('sortSel').value;
+
+  if(currentView==='trash'){renderTrash(area);return;}
+
+  let showFolders=[], showFiles=[];
+  if(currentView==='all'){ showFolders=folders.filter(f=>!f.parentId); showFiles=[...files]; }
+  else if(currentView==='recent'){ showFiles=[...files].slice(0,6); }
+  else if(currentView==='favorites'){ showFolders=folders.filter(f=>f.starred); showFiles=files.filter(f=>f.starred); }
+  else if(currentView.startsWith('folder:')){
+    const fid=currentView.split(':')[1];
+    showFolders=folders.filter(f=>f.parentId===fid);
+    showFiles=files.filter(f=>f.folderId===fid);
+  }
+
+  if(q){ showFolders=showFolders.filter(f=>f.name.toLowerCase().includes(q)); showFiles=showFiles.filter(f=>f.name.toLowerCase().includes(q)); }
+
+  const sortFn = sort==='name'?(a,b)=>a.name.localeCompare(b.name):sort==='size'?(a,b)=>toKB(a.size)-toKB(b.size):(a,b)=>new Date(b.date)-new Date(a.date);
+  showFiles=[...showFiles].sort(sortFn);
+
+  // 1) Render section headers & folders if applicable, OR if we're in 'all' where you can always create a new folder
+  let html='';
+  if(showFolders.length || currentView === 'all'){
+    html+=`<div class="section-hdr" style="margin-top:${showFolders.length?4:0}px"><span class="section-label">Folders</span>${showFolders.length?`<span class="section-label" style="color:var(--text-tertiary);">${showFolders.length} item${showFolders.length!==1?'s':''}</span>`:''}</div>`;
+    if(gridMode==='grid'){
+      html+=`<div class="file-grid">`;
+      showFolders.forEach((f,i)=>html+=folderCard(f,i));
+      html+=`<div class="new-folder-card afu" onclick="openNewFolder()" style="animation-delay:${showFolders.length*0.03}s"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" stroke-linecap="round"/></svg><span>New Folder</span></div></div>`;
+    } else {
+      html+=`<div class="list-view">`;
+      showFolders.forEach(f=>html+=folderRow(f));
+      // Optionally put a folder creation button in list view, but sticking to existing design patterns
+      html+=`</div>`;
+    }
+  }
+
+  // 2) Render files if applicable
+  if(showFiles.length){
+    html+=`<div class="section-hdr" style="margin-top:${showFolders.length||currentView==='all'?14:0}px"><span class="section-label">Files</span><span class="section-label" style="color:var(--text-tertiary);">${showFiles.length} item${showFiles.length!==1?'s':''}</span></div>`;
+    if(gridMode==='grid'){
+      html+=`<div class="file-grid">`;
+      showFiles.forEach((f,i)=>html+=fileCard(f,i));
+      html+=`</div>`;
+    } else {
+      html+=`<div class="list-view">`;
+      showFiles.forEach(f=>html+=fileRow(f));
+      html+=`</div>`;
+    }
+  }
+
+  // 3) Display an "Empty State" message exclusively if there are absolutely no files at all
+  if(!showFolders.length && !showFiles.length){
+    html+=`<div class="empty-state" style="${currentView==='all'?'height:35%;margin-top:20px;':''}"><svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24" style="color:var(--text-tertiary)"><path d="M3 7a2 2 0 012-2h3.93a2 2 0 011.66.9l.82 1.2A2 2 0 0013.07 8H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg><span style="font-size:14px;">No files yet</span>${currentView==='all'||currentView.startsWith('folder:')?`<button class="tb-btn tb-primary" onclick="openUpload()" style="margin-top:10px;"><i class="fas fa-upload" style="font-size:11px;"></i> Upload File</button>`:''}</div>`;
+  }
+
+  area.innerHTML=html;
+}
+
+function toKB(s='0'){ const n=parseFloat(s); return s.includes('MB')?n*1024:n; }
+
+/* ─── CARD RENDERERS ─── */
+function folderCard(f,i){
+  const fi=colorMap[f.color]?.fi||'fi-orange';
+  const fc=countFiles(f.id);
+  return `<div class="folder-card afu" id="fcard-${f.id}" onclick="folderCardClick(event,'${f.id}')" oncontextmenu="showCtx(event,'${f.id}','folder')" style="animation-delay:${i*0.03}s">
+    <button class="star-btn ${f.starred?'starred':''}" onclick="event.stopPropagation();toggleStar('folder','${f.id}')"><i class="fas fa-star"></i></button>
+    <div class="folder-icon ${fi}">${fSVG(22)}</div>
+    <div class="folder-name" id="fname-${f.id}">${esc(f.name)}</div>
+    <div class="folder-meta">${fc} file${fc!==1?'s':''}</div>
+  </div>`;
+}
+function folderRow(f){
+  const tfi=colorMap[f.color]?.tfi||'tfi-orange';
+  return `<div class="list-row" id="frow-${f.id}" onclick="folderRowClick(event,'${f.id}')" oncontextmenu="showCtx(event,'${f.id}','folder')">
+    <div class="tree-folder-icon ${tfi}" style="width:28px;height:28px;border-radius:7px;">${fSVG(15)}</div>
+    <span class="list-name" id="frname-${f.id}">${esc(f.name)}</span>
+    <span class="list-date">${countFiles(f.id)} files</span>
+  </div>`;
+}
+function fileCard(f,i){
+  const tags=f.tags.map(t=>`<span class="ftag ${t==='important'?'ftag-important':''}">${t}</span>`).join('');
+  return `<div class="file-card afu" id="ficard-${f.id}" onclick="fileCardClick(event,'${f.id}')" oncontextmenu="showCtx(event,'${f.id}','file')" style="animation-delay:${i*0.03}s">
+    <button class="star-btn ${f.starred?'starred':''}" onclick="event.stopPropagation();toggleStar('file','${f.id}')"><i class="fas fa-star"></i></button>
+    <div class="file-type">${f.type}</div>
+    <div class="file-name" id="finame-${f.id}">${esc(stripExt(f.name))}</div>
+    <div class="file-meta">${f.date} · ${f.size}</div>
+    <div class="file-tags">${tags}</div>
+    <div class="hover-ai">
+      <button class="ai-pill" onclick="event.stopPropagation();openPanel('${f.id}');triggerAI('summarize','${f.id}')">Summarize</button>
+      <button class="ai-pill" onclick="event.stopPropagation();openPanel('${f.id}');triggerAI('quiz','${f.id}')">Quiz</button>
+      <button class="ai-pill" onclick="event.stopPropagation();openPanel('${f.id}');triggerAI('explain','${f.id}')">Explain</button>
+    </div>
+  </div>`;
+}
+function fileRow(f){
+  const tag=f.tags[0]?`<span class="ftag ${f.tags[0]==='important'?'ftag-important':''}" style="margin-left:8px;font-size:10px;">${f.tags[0]}</span>`:'';
+  return `<div class="list-row" id="firow-${f.id}" onclick="fileRowClick(event,'${f.id}')" oncontextmenu="showCtx(event,'${f.id}','file')">
+    <div class="list-type-icon">${f.type}</div>
+    <span class="list-name" id="firname-${f.id}">${esc(stripExt(f.name))}</span>${tag}
+    <span class="list-date" style="margin-left:auto;">${f.date}</span>
+    <span class="list-size">${f.size}</span>
+  </div>`;
+}
+
+/* click guards — block nav when an inline input is active */
+let renamingId=null;
+function folderCardClick(e,fid){ if(renamingId) return; navigateFolder(fid,null); renderAll(); }
+function folderRowClick(e,fid){ if(renamingId) return; navigateFolder(fid,null); renderAll(); }
+function fileCardClick(e,fid){ if(renamingId) return; window.location.href=`viewer.html?id=${fid}`; }
+function fileRowClick(e,fid){ if(renamingId) return; window.location.href=`viewer.html?id=${fid}`; }
+
+/* ─── TRASH VIEW ─── */
+function renderTrash(area){
+  if(!trash.length){area.innerHTML=`<div class="empty-state"><svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24" style="color:var(--text-tertiary)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="font-size:14px;">Trash is empty</span></div>`;return;}
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><span style="font-size:12px;color:var(--text-tertiary);">${trash.length} item${trash.length!==1?'s':''}</span><button class="tb-btn tb-danger" onclick="emptyTrash()"><i class="fas fa-trash" style="font-size:10px;"></i> Empty Trash</button></div><div class="file-grid">`;
+  trash.forEach(t=>{
+    if(t.type==='folder'){
+      const fi=colorMap[t.item.color]?.fi||'fi-orange';
+      html+=`<div class="folder-card" style="opacity:0.55;"><div class="folder-icon ${fi}">${fSVG(22)}</div><div class="folder-name">${esc(t.item.name)}</div><div style="display:flex;gap:5px;margin-top:6px;"><button class="tb-btn tb-surface" style="font-size:10px;padding:4px 8px;" onclick="restoreItem('${t.item.id}','folder')">Restore</button><button class="tb-btn tb-danger" style="font-size:10px;padding:4px 8px;" onclick="permDelete('${t.item.id}','folder')">Delete</button></div></div>`;
+    } else {
+      html+=`<div class="file-card" style="opacity:0.55;"><div class="file-type">${t.item.type}</div><div class="file-name">${esc(stripExt(t.item.name))}</div><div class="file-meta">${t.item.size}</div><div style="display:flex;gap:5px;margin-top:6px;"><button class="tb-btn tb-surface" style="font-size:10px;padding:4px 8px;" onclick="restoreItem('${t.item.id}','file')">Restore</button><button class="tb-btn tb-danger" style="font-size:10px;padding:4px 8px;" onclick="permDelete('${t.item.id}','file')">Delete</button></div></div>`;
+    }
+  });
+  html+=`</div>`;
+  area.innerHTML=html;
+}
+
+/* ─── GRID/LIST ─── */
+function setGridView(v){
+  gridMode=v;
+  document.getElementById('gridBtn').classList.toggle('active',v==='grid');
+  document.getElementById('listBtn').classList.toggle('active',v==='list');
+  renderAll();
+}
+
+/* ─── RIGHT PANEL ─── */
+function openPanel(fid){
+  const f=files.find(x=>x.id===fid); if(!f) return;
+  activePanelFileId=fid;
+  const folder=folders.find(x=>x.id===f.folderId);
+  document.getElementById('panelTitle').textContent=f.name;
+  document.getElementById('metaLocation').textContent=folder?getFolderChain(folder.id).map(x=>x.name).join(' › '):'Root';
+  document.getElementById('metaDate').textContent=f.date;
+  document.getElementById('metaSize').textContent=f.size;
+  document.getElementById('metaTags').textContent=f.tags.length?f.tags.map(t=>'#'+t).join(' '):'—';
+  document.getElementById('previewType').textContent=f.type;
+  document.getElementById('rightPanel').classList.remove('hidden');
+}
+function closePanel(){ document.getElementById('rightPanel').classList.add('hidden'); activePanelFileId=null; }
+
+/* trigger an AI action from the hover pills — opens panel then fires the action */
+const aiMessages = {
+  summarize: 'Generate a concise summary of this document.',
+  quiz:      'Create a short quiz based on the key concepts in this document.',
+  explain:   'Explain the main ideas in this document in simple terms.',
+};
+function triggerAI(action, fid){
+  // slight delay so panel has time to render before we write to chatBubble
+  setTimeout(()=>{
+    const input  = document.getElementById('chatInput');
+    const bubble = document.getElementById('chatBubble');
+    if(!input || !bubble) return;
+    const msg = aiMessages[action] || 'Tell me about this document.';
+    input.value = msg;
+    bubble.style.display = 'block';
+    bubble.textContent   = 'Analysing document…';
+    setTimeout(()=>{
+      const responses = {
+        summarize: `Here's a summary: this document covers the core concepts with structured explanations. Key takeaways include the main definitions, supporting examples, and conclusions drawn by the author.`,
+        quiz:      `Quiz ready! Q1: What is the main topic covered? Q2: Name two key concepts discussed. Q3: What conclusion does the document reach?`,
+        explain:   `In simple terms: this document explains the topic step by step, starting from fundamentals and building up to more advanced ideas. Think of it as a guided walkthrough.`,
+      };
+      bubble.textContent = responses[action] || 'Here\'s what I found in this document.';
+      input.value = '';
+    }, 1300);
+  }, 80);
+}
+function panelRename(){ if(activePanelFileId) openRename('file',activePanelFileId); }
+function panelMove(){ if(activePanelFileId) openMoveModal('file',activePanelFileId); }
+function panelDelete(){ if(activePanelFileId){ deleteItem('file',activePanelFileId); closePanel(); } }
+
+/* ─── STAR ─── */
+function toggleStar(type,id){
+  const arr=type==='folder'?folders:files;
+  const item=arr.find(x=>x.id===id); if(item) item.starred=!item.starred;
+  renderAll();
+}
+
+/* ─── NEW/EDIT FOLDER ─── */
+function openNewFolder(){
+  editingFolderId=null; selectedColor='orange';
+  document.getElementById('folderModalTitle').textContent='New Folder';
+  document.getElementById('folderConfirmBtn').textContent='Create';
+  document.getElementById('folderNameInput').value='';
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('selected',d.dataset.color==='orange'));
+  document.getElementById('folderModal').classList.add('open');
+  setTimeout(()=>document.getElementById('folderNameInput').focus(),100);
+}
+function openEditFolder(fid){
+  const f=folders.find(x=>x.id===fid); if(!f) return;
+  editingFolderId=fid; selectedColor=f.color;
+  document.getElementById('folderModalTitle').textContent='Edit Folder';
+  document.getElementById('folderConfirmBtn').textContent='Save';
+  document.getElementById('folderNameInput').value=f.name;
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('selected',d.dataset.color===f.color));
+  document.getElementById('folderModal').classList.add('open');
+  setTimeout(()=>{ const i=document.getElementById('folderNameInput'); i.focus(); i.select(); },100);
+}
+function closeFolderModal(){ document.getElementById('folderModal').classList.remove('open'); }
+function selectColor(el){ document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected')); el.classList.add('selected'); selectedColor=el.dataset.color; }
+async function confirmFolder(){
+  const name=document.getElementById('folderNameInput').value.trim(); if(!name) return;
+  if(editingFolderId){
+    const f=folders.find(x=>x.id===editingFolderId); if(f){f.name=name;f.color=selectedColor;}
+    showToast(`Folder renamed to "${name}"`);
+    closeFolderModal(); renderAll();
+  } else {
+    // API logic for creating folder
+    const token = getToken();
+    try {
+      const res = await fetch("http://127.0.0.1:8000/folders/", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color: selectedColor })
+      });
+      if(res.ok) {
+        showToast(`Folder "${name}" created`);
+        fetchFolders();
+      } else {
+        const errData = await res.json().catch(()=>({}));
+        showToast(errData.detail || "Failed to create folder");
+      }
+    } catch(err) { console.error(err); showToast("Network error creating folder"); }
+    closeFolderModal();
+  }
+}
+
+/* ─── INLINE RENAME ─── */
+function openRename(type,id){
+  const item=type==='folder'?folders.find(x=>x.id===id):files.find(x=>x.id===id);
+  if(!item) return;
+  renamingId=id;
+
+  // Find the name element — could be in grid card or list row
+  const nameEl = document.getElementById('fname-'+id)   // folder card
+               ||document.getElementById('frname-'+id)  // folder row
+               ||document.getElementById('finame-'+id)  // file card
+               ||document.getElementById('firname-'+id);// file row
+  if(!nameEl) { renamingId=null; return; }
+
+  const originalName=item.name;
+  const inp=document.createElement('input');
+  inp.className='inline-rename';
+  inp.value=originalName;
+
+  // shrink input to fit inside card
+  nameEl.style.overflow='visible';
+  nameEl.innerHTML='';
+  nameEl.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  function commit(){
+    const newName=inp.value.trim();
+    if(newName && newName!==originalName){
+      item.name=newName;
+      showToast(`Renamed to "${newName}"`);
+      if(activePanelFileId===id) openPanel(id);
+    }
+    renamingId=null;
+    renderAll();
+  }
+  function cancel(){
+    renamingId=null;
+    renderAll();
+  }
+
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+    if(e.key==='Escape'){ e.preventDefault(); cancel(); }
+    e.stopPropagation();
+  });
+  inp.addEventListener('blur',()=>{ if(renamingId===id) commit(); });
+  inp.addEventListener('click',e=>e.stopPropagation());
+}
+
+/* ─── MOVE ─── */
+async function openMoveModal(type,id){
+  moveTarget={type,id}; moveSelectedFolderId=null;
+  const excludeId=type==='folder'?id:null;
+  const list=document.getElementById('moveFolderList');
+  list.innerHTML=`<div style="padding:12px;font-size:13px;color:var(--text-tertiary);">Loading folders...</div>`;
+  document.getElementById('moveModal').classList.add('open');
+  
+  const token = getToken();
+  if(!token) return;
+  try {
+    const res = await fetch("http://127.0.0.1:8000/folders/", {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if(!res.ok) throw new Error("Failed to load folders");
+    const data = await res.json();
+    folders = data; // update global state
+    
+    let validFolders = data;
+    if (excludeId) validFolders = validFolders.filter(f => f.id !== excludeId);
+    
+    list.innerHTML=validFolders.map(f=>{
+      const tfi=colorMap[f.color]?.tfi||'tfi-orange';
+      return `<button class="folder-option" onclick="pickMoveFolder('${f.id}',this)" style="padding-left:12px;">
+        <span class="tree-folder-icon ${tfi}" style="width:20px;height:20px;">${fSVG(12)}</span>
+        <span>${esc(f.name)}</span>
+      </button>`;
+    }).join('')||`<div style="padding:12px;font-size:13px;color:var(--text-tertiary);">No folders available</div>`;
+  } catch(err) {
+    console.error(err);
+    list.innerHTML=`<div style="padding:12px;font-size:13px;color:var(--text-tertiary);">Error loading folders</div>`;
+  }
+}
+function pickMoveFolder(fid,el){ document.querySelectorAll('.folder-option').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); moveSelectedFolderId=fid; }
+function closeMove(){ document.getElementById('moveModal').classList.remove('open'); moveTarget=null; moveSelectedFolderId=null; }
+async function confirmMove(){
+  if(!moveTarget||!moveSelectedFolderId){showToast('Pick a destination folder');return;}
+  if(moveTarget.type==='folder'){ 
+    const f=folders.find(x=>x.id===moveTarget.id); if(f) f.parentId=moveSelectedFolderId; 
+  } else { 
+    const f=files.find(x=>x.id===moveTarget.id); if(f) f.folderId=moveSelectedFolderId; 
+    
+    // Save via API
+    const token = getToken();
+    try {
+      await fetch(`http://127.0.0.1:8000/documents/${moveTarget.id}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ folder_id: moveSelectedFolderId })
+      });
+      fetchDocuments();
+    } catch(err) { console.error(err); }
+  }
+  const dest=folders.find(x=>x.id===moveSelectedFolderId);
+  showToast(`Moved to "${dest?.name || 'Folder'}"`); closeMove(); renderAll();
+  if(activePanelFileId===moveTarget.id) openPanel(activePanelFileId);
+}
+
+/* ─── DELETE / TRASH ─── */
+async function deleteItem(type,id){
+  const token = getToken();
+  if(!token) return;
+  const endpoint = type === 'folder' ? `/folders/${id}` : `/documents/${id}`;
+  try {
+    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+      method: "PATCH",
+      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ is_trashed: true })
+    });
+    if(res.ok) {
+       showToast(`${type === 'folder' ? 'Folder' : 'File'} moved to Trash`);
+       if(type==='folder') fetchFolders(); else fetchDocuments();
+    } else showToast(`Failed to delete ${type}`);
+  } catch(err) { console.error(err); }
+}
+
+async function restoreItem(id,type){
+  const token = getToken();
+  if(!token) return;
+  const endpoint = type === 'folder' ? `/folders/${id}` : `/documents/${id}`;
+  try {
+    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+      method: "PATCH",
+      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ is_trashed: false })
+    });
+    if(res.ok) {
+       showToast(`Item restored`);
+       fetchTrash(); 
+    }
+  } catch(err) { console.error(err); }
+}
+
+async function permDelete(id,type){
+  const token = getToken();
+  if(!token) return;
+  const endpoint = type === 'folder' ? `/folders/${id}` : `/documents/${id}`;
+  try {
+    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if(res.ok) {
+       showToast(`Item permanently deleted`);
+       fetchTrash();
+    }
+  } catch(err) { console.error(err); }
+}
+
+function emptyTrash(){ 
+  trash.forEach(t => permDelete(t.item.id, t.type)); 
+}
+
+/* ─── CONTEXT MENU ─── */
+let ctxOpen=false;
+function showCtx(e,id,type){
+  e.preventDefault(); e.stopPropagation();
+  ctxTarget={id,type};
+  const item=type==='folder'?folders.find(x=>x.id===id):files.find(x=>x.id===id);
+  document.getElementById('ctxOpenLabel').textContent=type==='folder'?'Open Folder':'Open';
+  document.getElementById('ctxFileOnly').style.display=type==='file'?'block':'none';
+  document.getElementById('ctxEditColorItem').style.display=type==='folder'?'flex':'none';
+  document.getElementById('ctxMoveItem').style.display='flex';
+  document.getElementById('ctxStarLabel').textContent=item?.starred?'Remove Favorite':'Add to Favorites';
+  const m=document.getElementById('ctxMenu');
+  m.style.left=Math.min(e.clientX,window.innerWidth-190)+'px';
+  m.style.top=Math.min(e.clientY,window.innerHeight-280)+'px';
+  m.classList.add('open'); ctxOpen=true;
+}
+function closeCtx(){ document.getElementById('ctxMenu').classList.remove('open'); ctxOpen=false; }
+function ctxAction(a){
+  closeCtx(); if(!ctxTarget) return;
+  const {type,id}=ctxTarget;
+  if(a==='open'){ if(type==='folder'){navigateFolder(id,null);renderAll();}else window.location.href=`viewer.html?id=${id}`; }
+  else if(a==='rename'){ openRename(type,id); }
+  else if(a==='editfolder'){ openEditFolder(id); }
+  else if(a==='move'){ openMoveModal(type,id); }
+  else if(a==='star'){ toggleStar(type,id); }
+  else if(a==='delete'){ deleteItem(type,id); if(activePanelFileId===id) closePanel(); }
+  else if(a==='download'){ showToast('Download started'); }
+  else if(a==='ask'){ openPanel(id); }
+}
+document.addEventListener('click',()=>{ if(ctxOpen) closeCtx(); });
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ closeCtx(); closePanel(); closeMove(); closeFolderModal(); closeUpload(); }
+});
+
+/* ─── UPLOAD ─── */
+function openUpload(){ document.getElementById('uploadModal').classList.add('open'); }
+function closeUpload(){
+  document.getElementById('uploadModal').classList.remove('open');
+  document.getElementById('uploadProgress').style.display='none';
+  document.getElementById('progressFill').style.width='0';
+  document.getElementById('progressFill').style.background='var(--accent)';
+  document.getElementById('uploadStatus').textContent='Uploading…';
+  document.getElementById('processingMsg').textContent='';
+}
+function handleDrop(e){ e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover'); if(e.dataTransfer.files.length) performUpload(e.dataTransfer.files[0]); }
+function handleFileSelect(e){ if(e.target.files.length) performUpload(e.target.files[0]); }
+function simulateUpload(){
+  const input = document.getElementById('fileInput');
+  if (input.files.length > 0) {
+    performUpload(input.files[0]);
+  } else {
+    showToast("Please click browse and select a file to upload");
+  }
+}
+
+async function performUpload(file){
+  const token = getToken();
+  if (!token) {
+    showToast("Please sign in to upload files");
+    return;
+  }
+  
+  const fill=document.getElementById('progressFill'),status=document.getElementById('uploadStatus'),msg=document.getElementById('processingMsg');
+  document.getElementById('uploadFileName').textContent=file.name;
+  document.getElementById('uploadProgress').style.display='flex';
+  fill.style.width='0'; fill.style.background='var(--accent)'; status.textContent='Uploading…'; msg.textContent='';
+  msg.style.color='var(--text-tertiary)';
+  
+  // Fake animation progress
+  let w=0;
+  const iv=setInterval(()=>{ w=Math.min(w+Math.random()*15, 85); fill.style.width=Math.round(w)+'%'; },150);
+
+  const formData = new FormData();
+  formData.append('file', file);
+  const fid = currentView.startsWith('folder:') ? currentView.split(':')[1] : null;
+  if(fid) formData.append('folder_id', fid);
+  
+  try {
+    const res = await fetch("http://127.0.0.1:8000/documents/upload", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}` },
+      body: formData
+    });
+    
+    clearInterval(iv);
+    fill.style.width='100%';
+    
+    if(!res.ok){
+      fill.style.background='var(--red)';
+      status.textContent='Error';
+      const errorData = await res.json().catch(()=>({}));
+      msg.textContent = errorData.detail || 'Failed to upload file.';
+      msg.style.color = 'var(--red)';
+      
+      // Ensure file input is cleared so user can reselect same file if needed
+      document.getElementById('fileInput').value = '';
+      showToast(msg.textContent);
+      setTimeout(closeUpload, 3000);
+      return;
+    }
+    
+    status.textContent='Done'; 
+    msg.textContent='File saved successfully!';
+    msg.style.color = 'var(--text-tertiary)';
+    fill.style.background='var(--green)';
+    
+    // Ensure file input is cleared so user can reselect same file
+    document.getElementById('fileInput').value = '';
+    
+    // Refresh list
+    setTimeout(()=>{
+      closeUpload();
+      fetchDocuments();
+    }, 1200);
+    
+  } catch (err) {
+    clearInterval(iv);
+    fill.style.background='var(--red)';
+    status.textContent='Error';
+    msg.textContent='Network error uploading file.';
+    msg.style.color = 'var(--red)';
+    
+    document.getElementById('fileInput').value = '';
+    showToast("Error uploading file");
+    setTimeout(closeUpload, 3000);
+  }
+}
+
+/* ─── CHAT ─── */
+function sendChat(){
+  const input=document.getElementById('chatInput'),bubble=document.getElementById('chatBubble');
+  if(!input.value.trim()) return;
+  bubble.style.display='block'; bubble.textContent='Analysing document…';
+  setTimeout(()=>{ bubble.textContent="Based on this document, here's a quick overview. Ask me anything more specific!"; },1200);
+  input.value='';
+}
+
+/* ─── TOAST ─── */
+let toastTimer;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500); }
+
+/* ─── UTILS ─── */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function stripExt(s){ const idx = String(s).lastIndexOf('.'); return idx > 0 ? String(s).substring(0, idx) : String(s); }
+
+/* ─── INIT ─── */
+renderAll();
+initActiveNav();
+fetchFolders();
+fetchDocuments();
+
+  // Local user check (Mock) handled by auth.js
+</script>
+</body>
+</html>

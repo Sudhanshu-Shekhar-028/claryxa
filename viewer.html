@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Document Viewer — Claryxa</title>
+<script src="auth.js"></script>
+<script>requireAuth();</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+<!-- PDF.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
+
+<style>
+:root {
+  --bg:             #000000;
+  --surface:        #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --surface-high:   #3a3a3c;
+  --border:         rgba(255, 255, 255, 0.08);
+  --separator:      rgba(255, 255, 255, 0.05);
+  --border-focus:   rgba(10, 132, 255, 0.55);
+  --text-primary:   #ffffff;
+  --text-secondary: #8e8e93;
+  --text-tertiary:  #48484a;
+  --accent:         #0a84ff;
+  --accent-hover:   #2c9aff;
+  --font:         -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --ease: 0.18s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text-primary);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+::-webkit-scrollbar{width:6px;height:6px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:9999px;}
+
+/* Topbar */
+.topbar {
+  height: 60px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+.tb-left, .tb-right { display: flex; align-items: center; gap: 16px; }
+.tb-center { flex: 1; text-align: center; }
+.doc-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; display: inline-block; }
+
+.icon-btn {
+  width: 36px; height: 36px; border-radius: var(--radius-md); background: none; border: none;
+  color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 15px; transition: background var(--ease), color var(--ease);
+}
+.icon-btn:hover { background: var(--surface-raised); color: var(--text-primary); }
+.icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.tb-btn {
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--font); font-size: 13px; font-weight: 500;
+  border: none; cursor: pointer; border-radius: var(--radius-md); padding: 8px 14px; transition: background var(--ease);
+  background: var(--surface-raised); color: var(--text-primary);
+}
+.tb-btn:hover { background: var(--surface-high); }
+
+/* Controls */
+.controls {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: var(--surface-raised); border-radius: var(--radius-md); padding: 4px 12px;
+}
+.page-info { font-size: 13px; font-weight: 500; color: var(--text-primary); min-width: 60px; text-align: center; }
+.ctrl-btn {
+  background: none; border: none; color: var(--text-primary); font-size: 14px; cursor: pointer; padding: 4px;
+  transition: opacity var(--ease), color var(--ease);
+}
+.ctrl-btn:hover { color: var(--accent); }
+.ctrl-btn:disabled { color: var(--text-tertiary); cursor: default; }
+
+/* Viewer Area */
+.viewer-container {
+  flex: 1;
+  background: var(--bg); /* Dark background behind PDF */
+  overflow: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+canvas {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  margin-bottom: 24px;
+  border-radius: 4px; /* Optional, slight rounding for aesthetics */
+  background: white; /* PDF content is usually white */
+}
+
+/* Overlays */
+.overlay-msg {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--bg); z-index: 10; gap: 16px; color: var(--text-secondary);
+}
+.spinner {
+  width: 32px; height: 32px; border: 3px solid var(--surface-high);
+  border-top: 3px solid var(--accent); border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+</style>
+
+<style>
+  body {
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  body.page-loaded {
+    opacity: 1;
+  }
+</style>
+<script src="transitions.js"></script>
+
+</head>
+<body>
+
+<header class="topbar">
+  <div class="tb-left">
+    <button class="tb-btn" onclick="window.history.back() || (window.location.href='library.html')">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+  </div>
+  <div class="tb-center">
+    <span class="doc-title" id="docTitle">Loading Document...</span>
+  </div>
+  <div class="tb-right" id="pdfControls" style="display:none;">
+    <div class="controls">
+       <button class="ctrl-btn" onclick="zoomOut()"><i class="fas fa-search-minus"></i></button>
+       <span class="page-info" id="zoomLevel" style="min-width: 40px;">100%</span>
+       <button class="ctrl-btn" onclick="zoomIn()"><i class="fas fa-search-plus"></i></button>
+    </div>
+  </div>
+</header>
+
+<div class="viewer-container" id="viewerContainer">
+  <div id="loadingOverlay" class="overlay-msg">
+    <div class="spinner"></div>
+    <div id="loadingText" style="font-size:15px;font-weight:500;">Connecting...</div>
+  </div>
+  <div id="errorOverlay" class="overlay-msg" style="display:none;">
+    <i class="fas fa-exclamation-circle" style="font-size:32px;color:var(--red);"></i>
+    <div id="errorText" style="font-size:15px;font-weight:500;color:var(--text-primary);">Failed to load document</div>
+    <button class="tb-btn" onclick="window.location.reload()">Retry</button>
+  </div>
+  
+  <div id="pagesContainer" style="display:none; flex-direction:column; align-items:center; gap:16px;"></div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const documentId = urlParams.get('id');
+
+const titleEl = document.getElementById('docTitle');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingText = document.getElementById('loadingText');
+const errorOverlay = document.getElementById('errorOverlay');
+const errorText = document.getElementById('errorText');
+const pdfControls = document.getElementById('pdfControls');
+
+let pdfDoc = null,
+    scale = 1.2,
+    pagesContainer = document.getElementById('pagesContainer');
+
+if (!documentId) {
+    showError("No document specified.");
+} else {
+    fetchDocumentMetadata();
+}
+
+async function fetchDocumentMetadata() {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/documents/${documentId}/view`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            if (res.status === 404) throw new Error("Document not found");
+            throw new Error("Failed to load document details");
+        }
+
+        const data = await res.json();
+        
+        // At backend we don't have the original name in the /view response yet, wait, we might need to fetch the document name from /documents/{id} or update /view to return name.
+        // Actually, /view does return all select("*") so it has "name". Let's use it.
+        // Wait, the API I wrote returns `{"signed_url": ..., "processing_status": ...}` ONLY.
+        // Oh, let me check what I actually wrote in `routes/documents.py`.
+        // I wrote: `return {"signed_url": signed_url, "processing_status": status}`
+        // Let's modify my fetch here to also grab the name from the standard GET `/documents/{id}` or I can just fix the backend to return it. I'll just fetch GET `documents/{id}` first for title, then use the /view details. Or wait, the GET `documents/{id}` already has everything except signed_url generation logic? It has `file_path`, but `/view` handles `processed_path`.
+        
+        titleEl.textContent = "Document Viewer"; // Fallback, will fetch proper later
+        
+        if (data.processing_status === 'pending' || data.processing_status === 'processing') {
+            loadingText.textContent = "Document is processing... Please wait.";
+            setTimeout(fetchDocumentMetadata, 5000); // Poll every 5s
+            return;
+        }
+        
+        if (data.processing_status === 'failed') {
+            showError("Document conversion failed.");
+            return;
+        }
+
+        if (data.signed_url) {
+            loadingText.textContent = "Loading PDF...";
+            loadPDF(data.signed_url);
+        } else {
+            showError("Document file not available.");
+        }
+
+    } catch (err) {
+        showError(err.message);
+    }
+}
+
+// Fetch basic info for title (since /view didn't include it explicitly)
+async function fetchBasicInfo() {
+    const token = getToken();
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/documents/${documentId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if(data.name) titleEl.textContent = data.name;
+        }
+    } catch(e) {}
+}
+if(documentId) fetchBasicInfo();
+
+
+function showError(msg) {
+    loadingOverlay.style.display = 'none';
+    errorOverlay.style.display = 'flex';
+    errorText.textContent = msg;
+    pagesContainer.style.display = 'none';
+    pdfControls.style.display = 'none';
+}
+
+function loadPDF(url) {
+    let loadingTask = pdfjsLib.getDocument(url);
+    loadingTask.promise.then(function(pdfDoc_) {
+        pdfDoc = pdfDoc_;
+        
+        loadingOverlay.style.display = 'none';
+        pagesContainer.style.display = 'flex';
+        pdfControls.style.display = 'flex';
+        
+        renderAllPages();
+    }).catch(function(err) {
+        console.error(err);
+        showError("Error rendering PDF: " + err.message);
+    });
+}
+
+function renderAllPages() {
+    pagesContainer.innerHTML = '';
+    document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+    
+    for (let num = 1; num <= pdfDoc.numPages; num++) {
+        let canvasWrapper = document.createElement('div');
+        canvasWrapper.className = 'canvas-wrapper';
+        canvasWrapper.style.position = 'relative';
+
+        let pageCanvas = document.createElement('canvas');
+        pageCanvas.id = `page-${num}`;
+        
+        canvasWrapper.appendChild(pageCanvas);
+        pagesContainer.appendChild(canvasWrapper);
+        
+        renderPage(num, pageCanvas);
+    }
+}
+
+function renderPage(num, canvasEl) {
+    pdfDoc.getPage(num).then(function(page) {
+        let viewport = page.getViewport({scale: scale});
+        let ctx = canvasEl.getContext('2d');
+        canvasEl.height = viewport.height;
+        canvasEl.width = viewport.width;
+
+        let renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        page.render(renderContext);
+    });
+}
+
+function zoomIn() {
+    scale += 0.2;
+    renderAllPages();
+}
+
+function zoomOut() {
+    if (scale <= 0.6) return;
+    scale -= 0.2;
+    renderAllPages();
+}
+
+</script>
+</body>
+</html>

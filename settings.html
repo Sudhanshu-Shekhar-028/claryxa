@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Claryxa Settings</title>
+<script src="auth.js"></script>
+<script>requireAuth();</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            dark: '#0b0f14',
+            card: '#141a22',
+            cardLight: '#1a1f2b',
+          }
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+
+
+<style>
+:root {
+  --bg:             #000000;
+  --surface:        #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --surface-high:   #3a3a3c;
+  --border:         rgba(255, 255, 255, 0.08);
+  --separator:      rgba(255, 255, 255, 0.05);
+  --border-focus:   rgba(10, 132, 255, 0.55);
+  --text-primary:   #ffffff;
+  --text-secondary: #8e8e93;
+  --text-tertiary:  #48484a;
+  --accent:         #0a84ff;
+  --accent-hover:   #2c9aff;
+  --accent-dim:     rgba(10, 132, 255, 0.14);
+  --green:          #30d158;
+  --red:            #ff453a;
+  --orange:         #ff9f0a;
+  --font:         -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --ease: 0.18s cubic-bezier(.4,0,.2,1);
+
+  --sidebar-collapsed: 104px;
+  --sidebar-expanded:  240px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font);
+  margin: 0;
+  padding: 24px 36px;
+  min-height: 100vh;
+  display: flex;
+  gap: 24px;
+}
+
+#sidebar {
+  width: var(--sidebar-collapsed);
+  flex-shrink: 0;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255,255,255,0.08);
+  position: sticky;
+  top: 24px;
+  height: calc(100vh - 48px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0 20px 0;
+  cursor: pointer;
+}
+#sidebar.expanded { width: var(--sidebar-expanded); }
+
+.sidebar-label {
+  opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, width 0.3s ease;
+  font-size: 0.875rem; font-weight: 500; color: var(--text-secondary);
+}
+#sidebar.expanded .sidebar-label { opacity: 1; width: auto; }
+
+.brand-name {
+  opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, width 0.3s ease;
+  font-family: var(--font-display); font-weight: 700; font-size: 16px;
+  color: var(--text-primary);
+}
+#sidebar.expanded .brand-name { opacity: 1; width: auto; }
+
+#main-content { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+
+.nav-item {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 0; border-radius: var(--radius-md); width: 100%;
+  background: transparent; border: none; color: var(--text-tertiary);
+  cursor: pointer;
+  white-space: nowrap;
+  height: 44px;
+  transition: background var(--ease), color var(--ease);
+}
+.nav-icon-pill {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+  transition: background var(--ease);
+}
+.nav-item:hover { color: var(--text-secondary); }
+.nav-item:hover .nav-icon-pill { background: var(--surface-raised); }
+.nav-item.active { color: var(--accent); }
+.nav-item.active .nav-icon-pill { background: var(--accent-dim); color: var(--accent); }
+
+#sidebar.expanded .nav-item { padding: 0 10px; justify-content: flex-start; }
+#sidebar.expanded .nav-icon-pill { width: 32px; height: 32px; border-radius: 9px; }
+
+/* ════════════════════
+   TOPBAR
+════════════════════ */
+.topbar {
+  height: 80px;
+  background: var(--surface);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-wrap i {
+  position: absolute;
+  left: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  pointer-events: none;
+}
+.search-wrap input {
+  background: var(--surface-raised);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 7px 14px 7px 32px;
+  width: 200px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  font-family: var(--font);
+  transition: box-shadow var(--ease);
+}
+.search-wrap input:focus { box-shadow: 0 0 0 2px var(--border-focus); }
+.search-wrap input::placeholder { color: var(--text-tertiary); }
+
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  position: relative;
+  transition: background var(--ease), color var(--ease);
+}
+.icon-btn:hover { background: var(--surface-raised); color: var(--text-primary); }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--orange);
+  border-radius: 50%;
+  border: 1.5px solid var(--surface);
+}
+
+/* ════════════════════
+   ACCOUNT DROPDOWN
+════════════════════ */
+.account-wrap {
+  position: relative;
+}
+.account-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 210px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  z-index: 300;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
+  animation: dropFade 0.16s cubic-bezier(.4,0,.2,1);
+}
+.account-dropdown.open { display: block; }
+@keyframes dropFade {
+  from { opacity:0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity:1; transform: translateY(0)    scale(1); }
+}
+/* small arrow pointing up */
+.account-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -5px; right: 12px;
+  width: 9px; height: 9px;
+  background: var(--surface-raised);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+.acc-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 8px 10px;
+  border-bottom: 1px solid var(--separator);
+  margin-bottom: 4px;
+}
+.acc-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1.5px solid rgba(10,132,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.acc-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.acc-email { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+
+.acc-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+}
+.acc-item:hover { background: var(--surface-high); color: var(--text-primary); }
+.acc-item.danger { color: var(--red); }
+.acc-item.danger:hover { background: rgba(255,69,58,0.1); color: var(--red); }
+.acc-item i { width: 14px; text-align: center; font-size: 12px; flex-shrink: 0; }
+
+.icon-action-btn {
+  background: var(--surface-raised); border: none; border-radius: var(--radius-md);
+  color: var(--text-secondary); cursor: pointer; padding: 8px;
+  transition: background var(--ease), color var(--ease);
+}
+.icon-action-btn:hover { background: var(--surface-high); color: var(--text-primary); }
+</style>
+
+<style>
+  body {
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  body.page-loaded {
+    opacity: 1;
+  }
+</style>
+<script src="transitions.js"></script>
+
+</head>
+
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar">
+
+  <!-- Logo -->
+  <div style="display:flex;align-items:center;justify-content:center;padding:0 0 var(--space-5) 0;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <!-- Claryxa C-mark -->
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <circle cx="18" cy="18" r="17" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <path d="M26 10.5 A11 11 0 1 0 26 25.5" stroke="white" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <circle cx="26" cy="10.5" r="2.2" fill="white"/>
+        <circle cx="26" cy="25.5" r="2.2" fill="#0a84ff"/>
+        <line x1="14" y1="18" x2="20" y2="18" stroke="#0a84ff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">Claryxa</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav style="display:flex;flex-direction:column;gap:2px;padding:0 var(--space-2);flex-grow:1;">
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='dashboard.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-home"></i></span>
+      <span class="sidebar-label">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='library.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-book-open"></i></span>
+      <span class="sidebar-label">My Courses</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='tasks.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-tasks"></i></span>
+      <span class="sidebar-label">Tasks</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='calendar.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-calendar-alt"></i></span>
+      <span class="sidebar-label">Calendar</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='assistant.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-brain"></i></span>
+      <span class="sidebar-label">Ask Claryo</span>
+    </button>
+  </nav>
+
+  <!-- Bottom -->
+  <div style="display:flex;flex-direction:column;gap:2px;padding:0 var(--space-2);">
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='settings.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-cog"></i></span>
+      <span class="sidebar-label">Settings</span>
+    </button>
+    <button class="nav-item" style="color:var(--red)!important;" onclick="setActive(this)">
+      <span class="nav-icon-pill" style="color:var(--red);"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="sidebar-label" style="color:var(--red);">Logout</span>
+    </button>
+  </div>
+
+</aside>
+
+<main id="main-content">
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="topbar-title">Settings</span>
+    <div class="topbar-right">
+      <div class="search-wrap" style="display:none;">
+        <i class="fas fa-search"></i>
+        <input placeholder="Search…" type="text"/>
+      </div>
+      <button class="icon-btn">
+        <i class="fas fa-bell"></i>
+        <span class="notif-dot"></span>
+      </button>
+      <!-- Account button + dropdown -->
+      <div class="account-wrap">
+        <button class="icon-btn" id="accountBtn" onclick="toggleAccount()" title="Account">
+          <i class="fas fa-user-circle" style="font-size:17px;"></i>
+        </button>
+        <div class="account-dropdown" id="accountDropdown">
+          <div id="accLoggedIn" style="display:none;">
+            <div class="acc-profile">
+              <div class="acc-avatar" id="accInitial">A</div>
+              <div>
+                <div class="acc-name" id="accName">Anshu</div>
+                <div class="acc-email" id="accEmail">anshu@example.com</div>
+              </div>
+            </div>
+            <button class="acc-item" onclick="goProfile()">
+              <i class="fas fa-user"></i> Profile
+            </button>
+            <button class="acc-item danger" onclick="signOut()">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </div>
+          <div id="accLoggedOut">
+            <button class="acc-item" onclick="signIn()">
+              <i class="fas fa-sign-in-alt"></i> Sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="display:flex;flex-direction:column;gap:24px;overflow-y:auto;padding-bottom:24px;">
+    <div class="custom-card" style="padding:40px;text-align:center;">
+      <i class="fas fa-tools" style="font-size:3rem;color:var(--accent);margin-bottom:20px;opacity:0.5;"></i>
+      <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:10px;">Settings Panel</h2>
+      <p style="color:var(--text-secondary);">This section is coming soon. You will be able to manage your profile and preferences here.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── SIDEBAR TOGGLE & NAVIGATION ──
+const sidebar = document.getElementById('sidebar');
+const current = 'settings';
+
+// Sidebar click to expand/collapse (but not on nav items)
+sidebar.addEventListener('click', (e) => {
+  if (e.target.closest('.nav-item')) return;
+  sidebar.classList.toggle('expanded');
+});
+
+// Set active page based on the 'current' variable
+function initActiveNav() {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const label = item.querySelector('.sidebar-label')?.textContent.trim().toLowerCase();
+    const matchLabel = label === 'my courses' ? 'library' : label;
+    const finalMatch = (matchLabel === 'ask claryo') ? 'assistant' : matchLabel;
+    if (finalMatch === current) item.classList.add('active');
+  });
+}
+
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── ACCOUNT DROPDOWN ──
+function toggleAccount() {
+  const drop = document.getElementById('accountDropdown');
+  drop.classList.toggle('open');
+}
+
+function signIn()  { alert('Sign in clicked'); }
+function signOut() { logout(); }
+function goProfile(){ alert('Profile clicked'); }
+
+// Close account dropdown if clicking outside
+window.addEventListener('click', (e) => {
+  if (!e.target.closest('.account-wrap')) {
+    const drop = document.getElementById('accountDropdown');
+    if (drop) drop.classList.remove('open');
+  }
+});
+
+// On load
+document.addEventListener('DOMContentLoaded', () => {
+  initActiveNav();
+
+  // Local user check (Mock) handled by auth.js
+});
+</script>
+
+</body>
+</html>

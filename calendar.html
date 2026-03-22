@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Calendar — Claryxa</title>
+<script src="auth.js"></script>
+<script>requireAuth();</script>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+
+
+
+<style>
+/* ════════════════════════════════════════════════════
+   CLARYO DESIGN SYSTEM — Dark
+════════════════════════════════════════════════════ */
+:root {
+  --bg:             #000000;
+  --surface:        #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --surface-high:   #3a3a3c;
+  --border:         rgba(255, 255, 255, 0.08);
+  --separator:      rgba(255, 255, 255, 0.05);
+  --border-focus:   rgba(10, 132, 255, 0.55);
+  --text-primary:   #ffffff;
+  --text-secondary: #8e8e93;
+  --text-tertiary:  #48484a;
+  --accent:         #0a84ff;
+  --accent-hover:   #2c9aff;
+  --accent-dim:     rgba(10, 132, 255, 0.14);
+  --green:          #30d158;
+  --red:            #ff453a;
+  --orange:         #ff9f0a;
+  --font:         -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --ease: 0.18s cubic-bezier(.4,0,.2,1);
+
+  --sidebar-collapsed: 104px;
+  --sidebar-expanded:  240px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+  display: flex;
+  gap: 24px;
+  padding: 24px 36px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: var(--radius-full); }
+
+/* ════════════════════
+   SIDEBAR
+════════════════════ */
+#sidebar {
+  width: var(--sidebar-collapsed);
+  flex-shrink: 0;
+  transition: width 0.35s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  position: sticky;
+  top: 24px;
+  height: calc(100vh - 48px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0 20px 0;
+  cursor: pointer;
+}
+#sidebar.expanded { width: var(--sidebar-expanded); }
+
+.brand-name {
+  opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, width 0.3s ease;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+#sidebar.expanded .brand-name { opacity: 1; width: auto; }
+
+.sidebar-label {
+  opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, width 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
+}
+#sidebar.expanded .sidebar-label { opacity: 1; width: auto; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: 0;
+  border-radius: var(--radius-md);
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  white-space: nowrap;
+  height: 44px;
+  transition: background var(--ease), color var(--ease);
+}
+.nav-item:hover { color: var(--text-primary); }
+.nav-item.active { color: var(--accent); }
+
+.nav-icon-pill {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+  transition: background var(--ease);
+}
+.nav-item:hover .nav-icon-pill { background: var(--surface-raised); }
+.nav-item.active .nav-icon-pill { background: var(--accent-dim); color: var(--accent); }
+
+#sidebar.expanded .nav-item { padding: 0 10px; justify-content: flex-start; }
+#sidebar.expanded .nav-icon-pill { width: 32px; height: 32px; border-radius: 9px; }
+
+/* ════════════════════
+   MAIN SHELL
+════════════════════ */
+#main-content {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: calc(100vh - 48px);
+  overflow: hidden;
+}
+
+/* ════════════════════
+   TOPBAR
+════════════════════ */
+.topbar {
+  height: 80px;
+  background: var(--surface);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-wrap i {
+  position: absolute;
+  left: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  pointer-events: none;
+}
+.search-wrap input {
+  background: var(--surface-raised);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 7px 14px 7px 32px;
+  width: 200px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  font-family: var(--font);
+  transition: box-shadow var(--ease), width var(--ease);
+}
+.search-wrap input:focus {
+  box-shadow: 0 0 0 2px var(--border-focus);
+  width: 240px;
+}
+.search-wrap input::placeholder { color: var(--text-tertiary); }
+
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  position: relative;
+  transition: background var(--ease), color var(--ease);
+}
+.icon-btn:hover { background: var(--surface-raised); color: var(--text-primary); }
+
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--orange);
+  border-radius: 50%;
+  border: 1.5px solid var(--surface);
+}
+.notif-badge {
+  position: absolute; top: 4px; right: 4px;
+  width: 16px; height: 16px;
+  background: var(--red);
+  border-radius: var(--radius-full);
+  font-size: 9px; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600;
+  border: 1.5px solid var(--surface);
+}
+
+/* ════════════════════
+   ACCOUNT DROPDOWN
+════════════════════ */
+.account-wrap {
+  position: relative;
+}
+.account-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 210px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  z-index: 300;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
+  animation: dropFade 0.16s cubic-bezier(.4,0,.2,1);
+}
+.account-dropdown.open { display: block; }
+@keyframes dropFade {
+  from { opacity:0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity:1; transform: translateY(0)    scale(1); }
+}
+/* small arrow pointing up */
+.account-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -5px; right: 12px;
+  width: 9px; height: 9px;
+  background: var(--surface-raised);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+.acc-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 8px 10px;
+  border-bottom: 1px solid var(--separator);
+  margin-bottom: 4px;
+}
+.acc-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1.5px solid rgba(10,132,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.acc-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.acc-email { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+
+.acc-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+}
+.acc-item:hover { background: var(--surface-high); color: var(--text-primary); }
+.acc-item.danger { color: var(--red); }
+.acc-item.danger:hover { background: rgba(255,69,58,0.1); color: var(--red); }
+.acc-item i { width: 14px; text-align: center; font-size: 12px; flex-shrink: 0; }
+
+/* ════════════════════
+   CAL CONTENT
+════════════════════ */
+.cal-content {
+  flex-grow: 1;
+  display: flex;
+  gap: var(--space-3);
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ════════════════════
+   CAL PANEL (left)
+════════════════════ */
+#cal-panel {
+  flex-grow: 1;
+  background: var(--bg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--space-5);
+}
+
+/* greeting */
+#greeting {
+  flex-shrink: 0;
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--separator);
+  margin-bottom: var(--space-4);
+}
+#greeting h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+#greeting p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* cal controls */
+.cal-ctrl {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  flex-shrink: 0;
+}
+.cal-ctrl-l { display: flex; align-items: center; gap: var(--space-2); }
+
+.pk-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: none; border: none;
+  color: var(--text-primary);
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  padding: 5px var(--space-2);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  transition: background var(--ease);
+  position: relative;
+}
+.pk-btn:hover { background: var(--surface-raised); }
+.pk-btn svg { width: 10px; height: 10px; color: var(--text-tertiary); }
+
+.tc-chip {
+  font-size: 12px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-weight: 500;
+  transition: background var(--ease);
+}
+.tc-chip:hover { background: rgba(10,132,255,0.22); }
+
+.cal-ctrl-r { display: flex; gap: var(--space-1); }
+.arr-btn {
+  width: 30px; height: 30px;
+  background: var(--surface-raised);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--ease), color var(--ease);
+}
+.arr-btn:hover { background: var(--surface-high); color: var(--text-primary); }
+.arr-btn svg { width: 13px; height: 13px; }
+
+/* dropdown */
+.dd {
+  position: absolute; top: calc(100% + 5px); left: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2); z-index: 300;
+  min-width: 150px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+  display: none;
+  animation: fdwn 0.14s ease;
+}
+.dd.open { display: block; }
+@keyframes fdwn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+.dd-item {
+  padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 13px; color: var(--text-secondary);
+  transition: all 0.1s; font-family: var(--font);
+}
+.dd-item:hover { background: var(--surface-high); color: var(--text-primary); }
+.dd-item.on { color: var(--accent); font-weight: 600; background: var(--accent-dim); }
+
+.y-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 3px; min-width: 192px; }
+.y-item {
+  padding: 5px 2px; border-radius: var(--radius-sm); text-align: center;
+  cursor: pointer; font-size: 12px; color: var(--text-secondary);
+  transition: all 0.1s; font-family: var(--font);
+}
+.y-item:hover { background: var(--surface-high); color: var(--text-primary); }
+.y-item.on { color: var(--accent); font-weight: 600; background: var(--accent-dim); }
+
+/* calendar grid */
+#cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7,1fr);
+  gap: 6px;
+  flex-grow: 1;
+  overflow: hidden;
+}
+.wdl {
+  font-size: 10px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 2px 6px 6px; text-align: center;
+}
+.cal-day {
+  background: #1a1a1c;
+  border-radius: var(--radius-md);
+  padding: 5px 6px;
+  display: flex; flex-direction: column;
+  cursor: pointer; min-height: 0; overflow: hidden;
+  transition: background var(--ease), transform var(--ease), box-shadow var(--ease);
+  border: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+}
+.cal-day:hover {
+  background: var(--surface-raised);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  border-color: rgba(255,255,255,0.07);
+}
+.cal-day.ot { opacity: 0.2; }
+.cal-day.ot:hover { opacity: 0.35; }
+.cal-day.tod {
+  border-color: rgba(10,132,255,0.3);
+  background: var(--accent-dim);
+}
+/* Selected: solid bottom accent line instead of dashed border */
+.cal-day.sel {
+  background: rgba(10,132,255,0.08);
+  border-color: rgba(255,255,255,0.04);
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+.dn {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-secondary);
+  flex-shrink: 0; line-height: 1;
+  text-align: center;
+}
+.cal-day.tod .dn { color: var(--accent); font-weight: 700; }
+.cal-day.sel .dn { color: var(--accent); }
+.cal-day.ot  .dn { color: var(--text-tertiary); }
+.td-dot {
+  display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent);
+  margin-left: 3px; vertical-align: middle; margin-bottom: 1px;
+}
+.epills { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 3px; }
+.epill {
+  font-size: 10px; font-weight: 500; padding: 2px 5px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ════════════════════
+   RIGHT PANEL
+════════════════════ */
+#right-panel {
+  width: 264px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  overflow: visible;
+  position: relative;
+}
+
+/* week strip card */
+.rcard-strip {
+  background: var(--bg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  padding: var(--space-4);
+  flex-shrink: 0;
+}
+/* events card */
+.rcard-events {
+  background: var(--bg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  padding: var(--space-4);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.rc-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--space-3); flex-shrink: 0;
+}
+.rc-title {
+  font-size: 10px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.rc-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.rc-acts { display: flex; align-items: center; gap: var(--space-1); }
+
+.dn-btn {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+  border-radius: var(--radius-sm); transition: color var(--ease), background var(--ease);
+}
+.dn-btn:hover { color: var(--text-primary); background: var(--surface-raised); }
+.dn-btn svg { width: 11px; height: 11px; }
+
+.add-btn {
+  width: 28px; height: 28px; border-radius: var(--radius-md);
+  background: var(--accent-dim);
+  border: none;
+  color: var(--accent); font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background var(--ease);
+}
+.add-btn:hover { background: rgba(10,132,255,0.25); }
+
+/* date strip */
+.dstrip { display: flex; gap: var(--space-1); }
+.dchip {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: var(--space-2) var(--space-1);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--ease), border-color var(--ease);
+}
+.dchip:hover { background: var(--surface-raised); }
+.dchip.act {
+  background: var(--accent-dim);
+  border-color: rgba(10,132,255,0.2);
+}
+.dchip .cwd {
+  font-size: 9px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.dchip.act .cwd { color: var(--accent); }
+.dchip .cnum { font-size: 13px; font-weight: 600; color: var(--text-tertiary); margin-top: 2px; }
+.dchip.act .cnum { color: var(--text-primary); }
+.dchip.ctod .cnum { color: var(--accent); }
+.dchip.has-ev::after {
+  content: ''; display: block; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); margin-top: 3px;
+}
+
+/* events scroll */
+.ev-scroll {
+  overflow-y: auto; flex-grow: 1;
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding-right: 2px;
+}
+
+/* event tile */
+.ev-tile {
+  background: var(--surface-raised);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  position: relative; overflow: hidden;
+  cursor: pointer; flex-shrink: 0;
+  border-left: 3px solid transparent;
+  transition: background var(--ease), transform var(--ease);
+}
+.ev-tile:hover {
+  background: var(--surface-high);
+  transform: translateX(2px);
+}
+
+.ev-top { display: flex; align-items: flex-start; gap: var(--space-2); margin-bottom: var(--space-2); }
+.ev-ico {
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+}
+.ev-name { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+.ev-desc-txt {
+  font-size: 11px; color: var(--text-secondary); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ev-time {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.ev-time i { font-size: 10px; color: var(--text-tertiary); }
+.ev-dur { color: var(--text-tertiary); }
+.ev-avs { display: flex; align-items: center; margin-top: var(--space-2); }
+.ev-avs img {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--surface);
+  margin-left: -5px; object-fit: cover;
+}
+.ev-avs img:first-child { margin-left: 0; }
+.ev-avs span { margin-left: 7px; font-size: 11px; color: var(--text-tertiary); }
+.ev-meet {
+  margin-top: var(--space-2); display: flex; align-items: center; gap: 5px;
+  padding: 5px var(--space-2);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11px; color: var(--text-secondary);
+  cursor: pointer; width: fit-content;
+  transition: background var(--ease);
+}
+.ev-meet:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+.ev-meet img { width: 11px; height: 11px; border-radius: 50%; }
+
+.ev-empty {
+  flex-grow: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: var(--space-2); padding: var(--space-5); text-align: center;
+}
+.ev-empty i { font-size: 24px; color: var(--text-tertiary); opacity: 0.4; }
+.ev-empty p { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+
+/* ════════════════════
+   SHIMMER
+════════════════════ */
+@keyframes shimmerAnim {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: #2c2c2e;
+  background-image: linear-gradient(90deg, #2c2c2e 0px, #3a3a3c 40px, #2c2c2e 80px);
+  background-size: 800px 100%;
+  animation: shimmerAnim 2s infinite linear;
+  border-radius: var(--radius-sm);
+  color: transparent !important;
+  border-color: transparent !important;
+  pointer-events: none;
+}
+.shimmer * { opacity: 0 !important; visibility: hidden !important; }
+
+/* ════════════════════
+   MODAL — popover anchored below add button, opens leftward
+════════════════════ */
+#modal {
+  display: none;
+  position: fixed;
+  width: 300px;
+  background: var(--surface-raised);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  z-index: 500;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.4);
+  animation: popDown 0.2s cubic-bezier(.4,0,.2,1);
+}
+#modal.open { display: block; }
+@keyframes popDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+/* small arrow pointing up toward the add button */
+#modal::before {
+  content: '';
+  position: absolute;
+  top: -6px; right: 14px;
+  width: 10px; height: 10px;
+  background: var(--surface-raised);
+  border-left: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  transform: rotate(45deg);
+}
+#modal h3 {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-5);
+  color: var(--text-primary);
+}
+
+.mf { margin-bottom: var(--space-3); }
+.mf label {
+  display: block;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-1);
+}
+.mf input, .mf select {
+  width: 100%;
+  background: var(--surface-raised);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 14px; outline: none;
+  font-family: var(--font);
+  transition: box-shadow var(--ease);
+}
+.mf input:focus, .mf select:focus { box-shadow: 0 0 0 2px var(--border-focus); }
+.mf select option { background: var(--surface); }
+.mf input::placeholder { color: var(--text-tertiary); }
+.mf-row { display: flex; gap: var(--space-2); }
+.mf-row .mf { flex: 1; margin-bottom: 0; }
+
+.crow { display: flex; gap: 6px; margin-top: var(--space-1); flex-wrap: wrap; }
+.cdot {
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: border-color var(--ease), transform var(--ease);
+}
+.cdot:hover { transform: scale(1.12); }
+.cdot.sel { border-color: white; }
+
+.m-acts { display: flex; gap: var(--space-2); margin-top: var(--space-5); }
+.btn-p {
+  flex-grow: 1; padding: 10px;
+  background: var(--accent);
+  border: none; border-radius: var(--radius-lg);
+  color: white; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: var(--font);
+  transition: background var(--ease), transform var(--ease);
+}
+.btn-p:hover { background: var(--accent-hover); }
+.btn-p:active { transform: scale(0.97); }
+.btn-s {
+  padding: 10px 16px;
+  background: var(--surface-raised); border: none;
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; font-family: var(--font);
+  transition: background var(--ease), color var(--ease);
+}
+.btn-s:hover { background: var(--surface-high); color: var(--text-primary); }
+</style>
+
+<style>
+  body {
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  body.page-loaded {
+    opacity: 1;
+  }
+</style>
+<script src="transitions.js"></script>
+
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar">
+
+  <!-- Logo -->
+  <div style="display:flex;align-items:center;justify-content:center;padding:0 0 var(--space-5) 0;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <!-- Claryxa C-mark: a bold arc with a spark tail -->
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <!-- outer glow ring (very subtle) -->
+        <circle cx="18" cy="18" r="17" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <!-- C arc — open right, bold stroke -->
+        <path d="M26 10.5
+                 A11 11 0 1 0 26 25.5"
+              stroke="white" stroke-width="2.8" stroke-linecap="round"
+              fill="none"/>
+        <!-- spark dot at the open tip (top) -->
+        <circle cx="26" cy="10.5" r="2.2" fill="white"/>
+        <!-- accent dot at the bottom tip -->
+        <circle cx="26" cy="25.5" r="2.2" fill="#0a84ff"/>
+        <!-- small inner accent dash — feels like a cursor / AI spark -->
+        <line x1="14" y1="18" x2="20" y2="18"
+              stroke="#0a84ff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">Claryxa</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav style="display:flex;flex-direction:column;gap:2px;padding:0 var(--space-2);flex-grow:1;">
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='dashboard.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-home"></i></span>
+      <span class="sidebar-label">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='library.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-book-open"></i></span>
+      <span class="sidebar-label">My Courses</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='tasks.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-tasks"></i></span>
+      <span class="sidebar-label">Tasks</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='calendar.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-calendar-alt"></i></span>
+      <span class="sidebar-label">Calendar</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='assistant.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-brain"></i></span>
+      <span class="sidebar-label">Ask Claryo</span>
+    </button>
+  </nav>
+
+  <!-- Bottom -->
+  <div style="display:flex;flex-direction:column;gap:2px;padding:0 var(--space-2);">
+    <button class="nav-item" onclick="setActive(this); setTimeout(() => window.location.href='settings.html', 120);">
+      <span class="nav-icon-pill"><i class="fas fa-cog"></i></span>
+      <span class="sidebar-label">Settings</span>
+    </button>
+    <button class="nav-item" style="color:var(--red)!important;" onclick="setActive(this)">
+      <span class="nav-icon-pill" style="color:var(--red);"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="sidebar-label" style="color:var(--red);">Logout</span>
+    </button>
+  </div>
+
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main id="main-content">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="topbar-title">Calendar</span>
+    <div class="topbar-right">
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input placeholder="Search for events…" type="text"/>
+      </div>
+      <button class="icon-btn">
+        <i class="fas fa-bell"></i>
+        <span class="notif-dot"></span>
+      </button>
+      <!-- Account button + dropdown -->
+      <div class="account-wrap">
+        <button class="icon-btn" id="accountBtn" onclick="toggleAccount()" title="Account">
+          <i class="fas fa-user-circle" style="font-size:17px;"></i>
+        </button>
+        <div class="account-dropdown" id="accountDropdown">
+          <!-- LOGGED-IN STATE (shown when user is signed in) -->
+          <div id="accLoggedIn" style="display:none;">
+            <div class="acc-profile">
+              <div class="acc-avatar" id="accInitial">A</div>
+              <div>
+                <div class="acc-name" id="accName">Anshu</div>
+                <div class="acc-email" id="accEmail">anshu@example.com</div>
+              </div>
+            </div>
+            <button class="acc-item" onclick="goProfile()">
+              <i class="fas fa-user"></i> Profile
+            </button>
+            <button class="acc-item danger" onclick="signOut()">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </div>
+          <!-- LOGGED-OUT STATE -->
+          <div id="accLoggedOut">
+            <button class="acc-item" onclick="signIn()">
+              <i class="fas fa-sign-in-alt"></i> Sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Calendar body -->
+  <div class="cal-content">
+
+    <!-- Calendar grid -->
+    <div id="cal-panel">
+      <div id="greeting">
+        <h2>Hello!</h2>
+        <p>Here's your schedule for today.</p>
+      </div>
+
+      <div class="cal-ctrl">
+        <div class="cal-ctrl-l">
+          <div style="position:relative;">
+            <button class="pk-btn" onclick="tdd('mdd')">
+              <span id="mlbl">September</span>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg>
+            </button>
+            <div class="dd" id="mdd"></div>
+          </div>
+          <div style="position:relative;">
+            <button class="pk-btn" onclick="tdd('ydd')">
+              <span id="ylbl">2025</span>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg>
+            </button>
+            <div class="dd" id="ydd"><div class="y-grid" id="ygrid"></div></div>
+          </div>
+          <button class="tc-chip" onclick="goToday()">Today</button>
+        </div>
+        <div class="cal-ctrl-r">
+          <button class="arr-btn" onclick="prevMo()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+          </button>
+          <button class="arr-btn" onclick="nextMo()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="cal-grid">
+        <div class="wdl">Sun</div><div class="wdl">Mon</div><div class="wdl">Tue</div>
+        <div class="wdl">Wed</div><div class="wdl">Thu</div><div class="wdl">Fri</div><div class="wdl">Sat</div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div id="right-panel">
+
+      <!-- Week strip -->
+      <div class="rcard-strip">
+        <div class="rc-hdr">
+          <div>
+            <div class="rc-title" id="strip-mo"></div>
+            <div class="rc-sub" id="strip-yr"></div>
+          </div>
+          <div class="rc-acts">
+            <button class="dn-btn" onclick="sprev()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+            <button class="dn-btn" onclick="snext()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+          </div>
+        </div>
+        <div class="dstrip" id="dstrip"></div>
+      </div>
+
+      <!-- Events -->
+      <div class="rcard-events">
+        <div class="rc-hdr">
+          <div>
+            <div class="rc-title">Scheduled</div>
+            <div class="rc-sub" id="sched-lbl">—</div>
+          </div>
+          <div class="rc-acts" style="position:relative;">
+            <button class="dn-btn" onclick="prevD()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+            <button class="dn-btn" onclick="nextD()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+            <button class="add-btn" onclick="openMod()" title="Add event"><i class="fas fa-plus"></i></button>
+
+            <!-- Popover anchored below-right of add button -->
+            <div id="modal">
+              <h3>Add Event</h3>
+              <div class="mf"><label>Event Name</label><input type="text" id="en" placeholder="e.g. Team Meeting"/></div>
+              <div class="mf"><label>Date</label><input type="date" id="ed"/></div>
+              <div class="mf-row">
+                <div class="mf"><label>Start</label><input type="time" id="es"/></div>
+                <div class="mf"><label>End</label><input type="time" id="ee"/></div>
+              </div>
+              <div class="mf"><label>Description</label><input type="text" id="edesc" placeholder="Optional note…"/></div>
+              <div class="mf"><label>Color</label><div class="crow" id="crow"></div></div>
+              <div class="m-acts">
+                <button class="btn-s" onclick="closeMod()">Cancel</button>
+                <button class="btn-p" onclick="saveEv()">Save Event</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ev-scroll" id="ev-list"></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+
+<script>
+// ── SIDEBAR TOGGLE & NAVIGATION ──
+const sidebar = document.getElementById('sidebar');
+const current = 'calendar'; // Tells us which page we are on
+
+// Sidebar click to expand/collapse (but not on nav items)
+sidebar.addEventListener('click', (e) => {
+  if (e.target.closest('.nav-item')) return;
+  sidebar.classList.toggle('expanded');
+});
+
+// Set active page based on the 'current' variable
+function initActiveNav() {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    // Get the text from the sidebar label
+    const label = item.querySelector('.sidebar-label')?.textContent.trim().toLowerCase();
+
+    // Map labels to our 'current' keys
+    let matchLabel = label;
+    if (label === 'my courses') matchLabel = 'library';
+    if (label === 'ask claryo')  matchLabel = 'assistant';
+
+    if (matchLabel === current) {
+      item.classList.add('active');
+    }
+  });
+}
+
+// Visual active switch (optional if navigating away anyway, but helps responsiveness)
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── ACCOUNT DROPDOWN ──
+function toggleAccount() {
+  const drop = document.getElementById('accountDropdown');
+  drop.classList.toggle('open');
+}
+
+function signIn()  { alert('Sign in clicked'); }
+function signOut() { logout(); }
+function goProfile(){ alert('Profile clicked'); }
+
+// Close account dropdown if clicking outside
+window.addEventListener('click', (e) => {
+  if (!e.target.closest('.account-wrap')) {
+    const drop = document.getElementById('accountDropdown');
+    if (drop && drop.classList.contains('open')) {
+      drop.classList.remove('open');
+    }
+  }
+});
+
+/* ── DATA & STATE ── */
+const MN  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const WDS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const WDF = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* Event colours — mapped to Claryo system colours */
+const EC = [
+  {k:'blue',   bg:'rgba(10,132,255,0.12)',   b:'#0a84ff', t:'#6cb8ff', ic:'fas fa-star',     ib:'rgba(10,132,255,0.18)'},
+  {k:'green',  bg:'rgba(48,209,88,0.1)',     b:'#30d158', t:'#6ee787', ic:'fas fa-leaf',      ib:'rgba(48,209,88,0.15)'},
+  {k:'red',    bg:'rgba(255,69,58,0.12)',    b:'#ff453a', t:'#ff7b73', ic:'fas fa-flag',      ib:'rgba(255,69,58,0.18)'},
+  {k:'yellow', bg:'rgba(255,214,10,0.1)',    b:'#ffd60a', t:'#ffe454', ic:'fas fa-bolt',      ib:'rgba(255,214,10,0.15)'},
+  {k:'orange', bg:'rgba(255,159,10,0.12)',   b:'#ff9f0a', t:'#ffba54', ic:'fas fa-sun',       ib:'rgba(255,159,10,0.18)'},
+  {k:'purple', bg:'rgba(191,90,242,0.12)',   b:'#bf5af2', t:'#d488f5', ic:'fas fa-calendar',  ib:'rgba(191,90,242,0.18)'},
+  {k:'cyan',   bg:'rgba(90,200,250,0.1)',    b:'#5ac8fa', t:'#8ddafc', ic:'fas fa-water',     ib:'rgba(90,200,250,0.15)'},
+  {k:'teal',   bg:'rgba(48,209,155,0.1)',    b:'#30d19b', t:'#6ee8bf', ic:'fas fa-seedling',  ib:'rgba(48,209,155,0.15)'},
+];
+
+const today = new Date(); today.setHours(0,0,0,0);
+let vy = today.getFullYear(), vm = today.getMonth(), sd = new Date(today), so = 0, ck = 'blue';
+
+let evs = {}; // Map of YYYY-MM-DD -> Array of items
+
+function fd(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function gc(val){ 
+  const found = EC.find(c => c.k === val || c.b === val);
+  if (found) return found;
+  return { b: val || '#6366f1', bg: (val || '#6366f1') + '22', t: val || '#6366f1', ic: 'fas fa-calendar-alt', ib: (val || '#6366f1') + '33' };
+}
+
+function dur(s,e){
+  if(!s||!e||s===e) return '';
+  const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+  const m=(eh*60+em)-(sh*60+sm);
+  if(m<=0) return '';
+  if(m<60) return `${m}m`;
+  const h=Math.floor(m/60),r=m%60;
+  return r?`${h}h ${r}m`:`${h}h`;
+}
+function fdate(d){ return `${WDF[d.getDay()]}, ${d.getDate()} ${MN[d.getMonth()]}`; }
+
+async function loadData() {
+  const m = vm + 1;
+  const y = vy;
+  
+  try {
+    const [evRes, taskRes] = await Promise.all([
+      fetch(`${API_URL}/calendar/events?month=${m}&year=${y}`, { headers: authHeaders() }),
+      fetch(`${API_URL}/tasks?status=pending`, { headers: authHeaders() })
+    ]);
+    
+    let apiEvents = [], apiTasks = [];
+    if (evRes.ok) apiEvents = await evRes.json();
+    if (taskRes.ok) apiTasks = await taskRes.json();
+    
+    evs = {};
+    apiEvents.forEach(e => {
+      const key = e.date;
+      if (!evs[key]) evs[key] = [];
+      evs[key].push({ isTask: false, id: e.id, name: e.title, s: e.start_time, e: e.end_time, c: e.color });
+    });
+    
+    apiTasks.forEach(t => {
+      if (t.due_date) {
+        const key = t.due_date;
+        if (!evs[key]) evs[key] = [];
+        evs[key].push({ isTask: true, id: t.id, name: t.title });
+      }
+    });
+
+
+    renderCal();
+    renderStrip();
+    renderPanel();
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+window.deleteCalEv = async (id, el, dateKey) => {
+  try {
+    const res = await fetch(`${API_URL}/calendar/events/${id}`, { 
+      method: 'DELETE', 
+      headers: authHeaders() 
+    });
+    console.log('delete status:', res.status);
+    if (res.ok || res.status === 404) {
+      if (evs[dateKey]) {
+        evs[dateKey] = evs[dateKey].filter(e => String(e.id) !== String(id));
+      }
+      renderCal();
+      renderPanel();
+    }
+  } catch(e) { console.error('deleteCalEv error:', e); }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  buildMdd(); buildYgrid(); buildCrow();
+  loadData();
+  initActiveNav();
+
+  // Local user check (Mock) handled by auth.js
+});
+
+function buildMdd(){
+  const d=document.getElementById('mdd'); d.innerHTML='';
+  MN.forEach((m,i)=>{ const el=document.createElement('div'); el.className='dd-item'+(i===vm?' on':''); el.textContent=m; el.onclick=()=>{vm=i;closeDD();loadData();}; d.appendChild(el); });
+}
+function buildYgrid(){
+  const g=document.getElementById('ygrid'); g.innerHTML='';
+  for(let i=0;i<16;i++){const y=vy-6+i; const el=document.createElement('div'); el.className='y-item'+(y===vy?' on':''); el.textContent=y; el.onclick=()=>{vy=y;closeDD();loadData();}; g.appendChild(el);}
+}
+function tdd(id){
+  const t=document.getElementById(id),was=t.classList.contains('open');
+  closeDD();
+  if(!was){if(id==='mdd')buildMdd();if(id==='ydd')buildYgrid(); t.classList.add('open');}
+}
+function closeDD(){ document.querySelectorAll('.dd').forEach(d=>d.classList.remove('open')); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.pk-btn')&&!e.target.closest('.dd')) closeDD(); });
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderCal(){
+  document.getElementById('mlbl').textContent=MN[vm];
+  document.getElementById('ylbl').textContent=vy;
+  const grid=document.getElementById('cal-grid');
+  const hdrs=Array.from(grid.children).slice(0,7);
+  grid.innerHTML=''; hdrs.forEach(h=>grid.appendChild(h));
+
+  const fd1=new Date(vy,vm,1).getDay();
+  const dim=new Date(vy,vm+1,0).getDate();
+  const dip=new Date(vy,vm,0).getDate();
+  const cells=[];
+  for(let i=fd1-1;i>=0;i--) cells.push({day:dip-i,m:vm-1,y:vy,o:true});
+  for(let d=1;d<=dim;d++)    cells.push({day:d,m:vm,y:vy,o:false});
+  const rem=(7-(cells.length%7))%7;
+  for(let d=1;d<=rem;d++)    cells.push({day:d,m:vm+1,y:vy,o:true});
+
+  cells.forEach(({day,m,y,o})=>{
+    const cd=new Date(y,m,day), key=fd(cd);
+    const isT=cd.getTime()===today.getTime(), isS=fd(cd)===fd(sd);
+    const cell=document.createElement('div');
+    cell.className='cal-day'+(o?' ot':'')+(isT?' tod':'')+(isS?' sel':'');
+    cell.dataset.date = key;
+    const nw=document.createElement('div'); nw.style.cssText='display:flex;align-items:center;justify-content:center;';
+    const sp=document.createElement('span'); sp.className='dn'; sp.textContent=day; nw.appendChild(sp);
+    if(isT){const dot=document.createElement('span');dot.className='td-dot';nw.appendChild(dot);}
+    cell.appendChild(nw);
+    
+    const dayE = evs[key] || [];
+    if (dayE.length > 0) {
+      const pp = document.createElement('div');
+      pp.className = 'epills';
+      dayE.slice(0, 3).forEach(ev => {
+        const p = document.createElement('div');
+        p.className = 'epill';
+        if (ev.isTask) {
+          p.style.cssText = `border-left-color: var(--text-tertiary); background: var(--surface-high); color: var(--text-secondary); font-style: italic;`;
+          p.textContent = ev.name;
+        } else {
+          const c = gc(ev.c);
+          p.style.cssText = `border-left-color:${c.b}; background:${c.bg}; color:${c.t}; display:flex; justify-content:space-between; align-items:center;`;
+          p.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:4px;">${esc(ev.name)}</span>
+          <i class="fas fa-times" style="font-size:8px;cursor:pointer;opacity:0.6;padding:2px;flex-shrink:0;"
+            onclick="event.stopPropagation(); deleteCalEv(${ev.id}, this, '${key}')"
+            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"></i>`;
+        }
+        pp.appendChild(p);
+      });
+      if (dayE.length > 3) {
+        const mo = document.createElement('div');
+        mo.style.cssText = 'font-size:9px;color:var(--text-tertiary);padding:1px 4px;';
+        mo.textContent = `+${dayE.length - 3} more`;
+        pp.appendChild(mo);
+      }
+      cell.appendChild(pp);
+    }
+    cell.onclick=()=>selDate(cd);
+    grid.appendChild(cell);
+  });
+}
+
+
+function updateSel(newDate) {
+  document.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
+  const cell = document.querySelector(`.cal-day[data-date="${fd(newDate)}"]`);
+  if (cell) cell.classList.add('sel');
+}
+
+function selDate(d){
+  sd=new Date(d);
+  if(d.getMonth()!==vm||d.getFullYear()!==vy){
+    vm=d.getMonth();vy=d.getFullYear();
+    so=0; loadData();
+  } else {
+    so=0; updateSel(sd); renderStrip(); renderPanel();
+  }
+}
+function goToday(){ 
+  const oldM = vm, oldY = vy;
+  vm=today.getMonth();vy=today.getFullYear();sd=new Date(today);so=0; 
+  if (oldM !== vm || oldY !== vy) loadData();
+  else { updateSel(sd); renderStrip();renderPanel(); }
+}
+function prevMo(){ vm--; if(vm<0){vm=11;vy--;} loadData(); }
+function nextMo(){ vm++; if(vm>11){vm=0;vy++;} loadData(); }
+function prevD(){ 
+  sd.setDate(sd.getDate()-1); 
+  if(sd.getMonth()!==vm){vm=sd.getMonth();vy=sd.getFullYear();so=0;loadData();}
+  else { so=0; updateSel(sd); renderStrip();renderPanel(); }
+}
+function nextD(){ 
+  sd.setDate(sd.getDate()+1); 
+  if(sd.getMonth()!==vm){vm=sd.getMonth();vy=sd.getFullYear();so=0;loadData();}
+  else { so=0; updateSel(sd); renderStrip();renderPanel(); }
+}
+
+function sprev(){ so-=7; renderStrip(); }
+function snext(){ so+=7; renderStrip(); }
+function renderStrip(){
+  const strip=document.getElementById('dstrip'); strip.innerHTML='';
+  const base=new Date(sd); base.setDate(base.getDate()-base.getDay()+so);
+  document.getElementById('strip-mo').textContent=MN[sd.getMonth()];
+  document.getElementById('strip-yr').textContent=sd.getFullYear();
+  for(let i=0;i<7;i++){
+    const d=new Date(base); d.setDate(base.getDate()+i);
+    const isSel=fd(d)===fd(sd), isT=d.getTime()===today.getTime(), hasEv=!!(evs[fd(d)]&&evs[fd(d)].length>0);
+    const chip=document.createElement('div');
+    chip.className='dchip'+(isSel?' act':'')+(isT&&!isSel?' ctod':'')+(hasEv?' has-ev':'');
+    chip.innerHTML=`<span class="cwd">${WDS[d.getDay()]}</span><span class="cnum">${d.getDate()}</span>`;
+    chip.onclick=()=>{so=0;selDate(d);};
+    strip.appendChild(chip);
+  }
+}
+
+function renderPanel(){
+  const key=fd(sd);
+  document.getElementById('sched-lbl').textContent=fdate(sd);
+  const list=document.getElementById('ev-list');
+  const dayE=(evs[key]||[]).slice().sort((a,b)=>(a.s||'').localeCompare(b.s||''));
+  if(!dayE.length){
+    list.innerHTML=`<div class="ev-empty"><i class="fas fa-calendar-check"></i><p>No events scheduled<br/>for this day.</p></div>`;
+    return;
+  }
+  list.innerHTML='';
+  dayE.forEach(ev=>{
+    if (ev.isTask) {
+      const tile=document.createElement('div');
+      tile.className='ev-tile';
+      tile.style.borderLeftColor='var(--text-tertiary)';
+      const inner=document.createElement('div');
+      inner.innerHTML=`
+        <div class="ev-top" style="align-items:center;">
+          <div class="ev-ico" style="background:var(--surface);color:var(--text-tertiary);"><i class="fas fa-tasks"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div class="ev-name" style="font-style:italic;">${ev.name}</div>
+          </div>
+        </div>
+      `;
+      tile.appendChild(inner);
+      list.appendChild(tile);
+    } else {
+      const c=gc(ev.c);
+      const tile=document.createElement('div');
+      tile.className='ev-tile';
+      tile.style.borderLeftColor=c.b;
+      const inner=document.createElement('div');
+      console.log('ev object:', ev);
+      inner.innerHTML=`
+        <div class="ev-top">
+          <div class="ev-ico" style="background:${c.ib};color:${c.t};"><i class="${c.ic}"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div class="ev-name">${ev.name}</div>
+          </div>
+        </div>
+        <div class="ev-time">
+          <i class="fas fa-clock"></i>
+          ${ev.s||'All Day'}${ev.e&&ev.e!==ev.s?' \u2013 '+ev.e:''}&nbsp;${dur(ev.s,ev.e)?`<span class="ev-dur">\u00B7 ${dur(ev.s,ev.e)}</span>`:''}
+        </div>
+<div style="display:flex;justify-content:flex-end;margin-top:6px;">
+  <button class="ev-delete-btn"
+    style="background:rgba(255,69,58,0.1);border:none;border-radius:var(--radius-sm);
+           color:var(--red);font-size:11px;padding:4px 10px;cursor:pointer;
+           font-family:var(--font);display:flex;align-items:center;gap:4px;"
+    onmouseover="this.style.background='rgba(255,69,58,0.2)'"
+    onmouseout="this.style.background='rgba(255,69,58,0.1)'">
+    <i class="fas fa-trash" style="font-size:9px;"></i> Delete
+  </button>
+</div>
+      `;
+      tile.appendChild(inner);
+
+      const delBtn = tile.querySelector('.ev-delete-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.deleteCalEv(ev.id, delBtn, key);
+        });
+      }
+
+      list.appendChild(tile);
+    }
+  });
+}
+
+/* ── MODAL ── */
+function buildCrow(){
+  const row=document.getElementById('crow');
+  EC.forEach(c=>{
+    const dot=document.createElement('div'); dot.className='cdot'+(c.k===ck?' sel':''); dot.style.background=c.b; dot.title=c.k;
+    dot.onclick=()=>{ck=c.k;document.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));dot.classList.add('sel');};
+    row.appendChild(dot);
+  });
+}
+function openMod(){
+  document.getElementById('ed').value=fd(sd);
+  document.getElementById('en').value='';
+  document.getElementById('es').value='09:00';
+  document.getElementById('ee').value='10:00';
+  document.getElementById('edesc').value='';
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+  // Position below and left-aligned to add button
+  const btn = document.querySelector('.add-btn');
+  const rect = btn.getBoundingClientRect();
+  const modalW = 300;
+  // align modal right edge with button right edge, clamp so it doesn't go off left
+  let left = rect.right - modalW;
+  if (left < 8) left = 8;
+  modal.style.top  = (rect.bottom + 8) + 'px';
+  modal.style.left = left + 'px';
+}
+function closeMod(){ document.getElementById('modal').classList.remove('open'); }
+
+/* close popover when clicking outside of it */
+document.addEventListener('click', e => {
+  const modal = document.getElementById('modal');
+  if (!modal.classList.contains('open')) return;
+  if (!modal.contains(e.target) && !e.target.closest('.add-btn')) closeMod();
+});
+async function saveEv(){
+  const name=document.getElementById('en').value.trim(),date=document.getElementById('ed').value,
+        s=document.getElementById('es').value,e=document.getElementById('ee').value;
+  if(!name||!date){alert('Please enter a name and date.');return;}
+  
+  // ck holds the color key right now, e.g. "green" or "blue"
+  const hex = EC.find(c => c.k === ck)?.b || '#6366f1';
+  
+  const btn = document.querySelector('.m-acts .btn-p');
+  const orgTxt = btn.innerHTML;
+  btn.innerHTML = 'Saving...';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
+  try {
+    const res = await fetch(`${API_URL}/calendar/events`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: name,
+        date: date,
+        start_time: s || null,
+        end_time: e || null,
+        color: hex
+      })
+    });
+    
+    if (res.ok) {
+      closeMod(); 
+      const newEv = await res.json();
+      
+      const key = newEv.date;
+      if (!evs[key]) evs[key] = [];
+      evs[key].push({ isTask: false, id: newEv.id, name: newEv.title, s: newEv.start_time, e: newEv.end_time, c: newEv.color });
+      
+      const cell = document.querySelector(`.cal-day[data-date="${key}"]`);
+      if (cell) {
+        let pp = cell.querySelector('.epills');
+        if (!pp) {
+          pp = document.createElement('div'); pp.className = 'epills';
+          cell.appendChild(pp);
+        }
+        const c = gc(newEv.color);
+        const p = document.createElement('div');
+        p.className = 'epill';
+        p.style.cssText = `border-left-color:${c.b};background:${c.bg};color:${c.t}; display:flex; justify-content:space-between; align-items:center; padding: 2px 5px;`;
+        p.innerHTML = `<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:4px;">${esc(newEv.title)}</span>
+        <i class="fas fa-times" style="font-size:8px; cursor:pointer; opacity:0.6; padding:2px; flex-shrink:0;" onclick="event.stopPropagation(); deleteCalEv(${newEv.id}, this, '${key}')" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"></i>`;
+        pp.appendChild(p);
+      }
+      renderPanel();
+    }
+  } catch(err) { console.error(err); }
+  
+  btn.innerHTML = orgTxt;
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+</script>
+</body>
+</html>
