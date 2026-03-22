@@ -939,7 +939,7 @@
             const data = await res.json();
             sessionStorage.setItem('token', data.token);
             sessionStorage.setItem('userEmail', email);
-            const derivedName = email.split('@')[0];
+            const derivedName = name || email.split('@')[0];
             sessionStorage.setItem('userName', derivedName.charAt(0).toUpperCase() + derivedName.slice(1));
             window.location.href = 'dashboard.html';
         } catch (err) {
