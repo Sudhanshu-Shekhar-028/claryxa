@@ -187,7 +187,7 @@ async function fetchDocumentMetadata() {
     if (!token) return;
 
     try {
-        const res = await fetch(`https://claryxa-backend-production.up.railway.app/documents/${documentId}/view`, {
+        const res = await fetch(`${API_URL}/documents/${documentId}/view/`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -234,7 +234,7 @@ async function fetchDocumentMetadata() {
 async function fetchBasicInfo() {
     const token = getToken();
     try {
-        const res = await fetch(`https://claryxa-backend-production.up.railway.app/documents/${documentId}`, {
+        const res = await fetch(`${API_URL}/documents/${documentId}/`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
