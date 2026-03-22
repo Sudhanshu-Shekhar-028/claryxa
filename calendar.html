@@ -1119,8 +1119,8 @@ async function loadData() {
   
   try {
     const [evRes, taskRes] = await Promise.all([
-      fetch(`${API_URL}/calendar/events?month=${m}&year=${y}`, { headers: authHeaders() }),
-      fetch(`${API_URL}/tasks?status=pending`, { headers: authHeaders() })
+      fetch(`${API_URL}/calendar/events/?month=${m}&year=${y}`, { headers: authHeaders() }),
+      fetch(`${API_URL}/tasks/?status=pending`, { headers: authHeaders() })
     ]);
     
     let apiEvents = [], apiTasks = [];
