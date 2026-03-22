@@ -1427,7 +1427,7 @@ async function saveEv(){
   btn.style.opacity = '0.7';
 
   try {
-    const res = await fetch(`${API_URL}/calendar/events`, {
+    const res = await fetch(`${API_URL}/calendar/events/`, {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({

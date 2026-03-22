@@ -1494,7 +1494,7 @@
 
       try {
         const [chatRes, tasksRes, evRes] = await Promise.all([
-          fetch(`${API_URL}/chat/sessions`, { headers: authHeaders() }).catch(()=>null),
+          fetch(`${API_URL}/chat/sessions/`, { headers: authHeaders() }).catch(()=>null),
           fetch(`${API_URL}/tasks/?status=pending`, { headers: authHeaders() }).catch(()=>null),
           fetch(`${API_URL}/calendar/events?month=${m}&year=${y}`, { headers: authHeaders() }).catch(()=>null)
         ]);

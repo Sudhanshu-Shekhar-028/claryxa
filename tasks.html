@@ -985,7 +985,7 @@ async function loadData() {
   `;
   try {
     const [catsRes, tasksRes] = await Promise.all([
-      fetch(`${API_URL}/tasks/categories`, { headers: authHeaders() }),
+      fetch(`${API_URL}/tasks/categories/`, { headers: authHeaders() }),
       fetch(`${API_URL}/tasks/`, { headers: authHeaders() })
     ]);
     if (catsRes.ok) state.categories = await catsRes.json();
@@ -1086,7 +1086,7 @@ async function addCat() {
   const color = colors[Math.floor(Math.random() * colors.length)];
   
   try {
-    const res = await fetch(`${API_URL}/tasks/categories`, {
+    const res = await fetch(`${API_URL}/tasks/categories/`, {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({ name, color })
