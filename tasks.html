@@ -1249,7 +1249,7 @@ function buildNoteColors() {
 
 async function loadNotes() {
   try {
-    const res = await fetch(`${API_URL}/tasks/notes`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/tasks/notes/`, { headers: authHeaders() });
     if (res.ok) {
       const data = await res.json();
       try {
@@ -1263,7 +1263,7 @@ async function loadNotes() {
 
 async function saveNotesToBackend() {
   try {
-    await fetch(`${API_URL}/tasks/notes`, {
+    await fetch(`${API_URL}/tasks/notes/`, {
       method: 'PATCH',
       headers: authHeaders(),
       body: JSON.stringify({ content: JSON.stringify(notesState.notes) })
