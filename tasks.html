@@ -986,7 +986,7 @@ async function loadData() {
   try {
     const [catsRes, tasksRes] = await Promise.all([
       fetch(`${API_URL}/tasks/categories`, { headers: authHeaders() }),
-      fetch(`${API_URL}/tasks`, { headers: authHeaders() })
+      fetch(`${API_URL}/tasks/`, { headers: authHeaders() })
     ]);
     if (catsRes.ok) state.categories = await catsRes.json();
     if (tasksRes.ok) state.tasks = await tasksRes.json();
@@ -1177,7 +1177,7 @@ async function addTask() {
   if (date) payload.due_date = date;
   
   try {
-    const res = await fetch(`${API_URL}/tasks`, {
+    const res = await fetch(`${API_URL}/tasks/`, {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify(payload)

@@ -1007,7 +1007,7 @@ let selectedDocumentId = null;
 
 async function loadDocuments() {
   try {
-    const res = await fetch(`${API_URL}/documents`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/documents/`, { headers: authHeaders() });
     if (!res.ok) return;
     const items = await res.json();
     
