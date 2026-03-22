@@ -1,5 +1,5 @@
 // auth.js
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://claryxa-backend-production.up.railway.app";
 
 function getToken() {
     return sessionStorage.getItem('token');

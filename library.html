@@ -626,7 +626,7 @@ async function fetchFolders() {
   const token = getToken();
   if (!token) return;
   try {
-    const res = await fetch("http://127.0.0.1:8000/folders", {
+    const res = await fetch("https://claryxa-backend-production.up.railway.app/folders", {
       method: "GET",
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -666,7 +666,7 @@ async function fetchDocuments() {
   const token = getToken();
   if (!token) return;
   try {
-    const res = await fetch("http://127.0.0.1:8000/documents/", {
+    const res = await fetch("https://claryxa-backend-production.up.railway.app/documents/", {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -700,8 +700,8 @@ async function fetchTrash() {
   trash = [];
   try {
     const [resFol, resDoc] = await Promise.all([
-      fetch("http://127.0.0.1:8000/folders?trashed=true", {headers:{"Authorization":`Bearer ${token}`}}),
-      fetch("http://127.0.0.1:8000/documents?trashed=true", {headers:{"Authorization":`Bearer ${token}`}})
+      fetch("https://claryxa-backend-production.up.railway.app/folders?trashed=true", {headers:{"Authorization":`Bearer ${token}`}}),
+      fetch("https://claryxa-backend-production.up.railway.app/documents?trashed=true", {headers:{"Authorization":`Bearer ${token}`}})
     ]);
     if (resFol.ok) {
       const foldersList = await resFol.json();
@@ -1091,7 +1091,7 @@ async function confirmFolder(){
     // API logic for creating folder
     const token = getToken();
     try {
-      const res = await fetch("http://127.0.0.1:8000/folders/", {
+      const res = await fetch("https://claryxa-backend-production.up.railway.app/folders/", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ name, color: selectedColor })
@@ -1168,7 +1168,7 @@ async function openMoveModal(type,id){
   const token = getToken();
   if(!token) return;
   try {
-    const res = await fetch("http://127.0.0.1:8000/folders/", {
+    const res = await fetch("https://claryxa-backend-production.up.railway.app/folders/", {
       method: "GET",
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -1203,7 +1203,7 @@ async function confirmMove(){
     // Save via API
     const token = getToken();
     try {
-      await fetch(`http://127.0.0.1:8000/documents/${moveTarget.id}`, {
+      await fetch(`https://claryxa-backend-production.up.railway.app/documents/${moveTarget.id}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ folder_id: moveSelectedFolderId })
@@ -1222,7 +1222,7 @@ async function deleteItem(type,id){
   if(!token) return;
   const endpoint = type === 'folder' ? `/folders/${id}` : `/documents/${id}`;
   try {
-    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+    const res = await fetch(`https://claryxa-backend-production.up.railway.app${endpoint}`, {
       method: "PATCH",
       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ is_trashed: true })
@@ -1239,7 +1239,7 @@ async function restoreItem(id,type){
   if(!token) return;
   const endpoint = type === 'folder' ? `/folders/${id}` : `/documents/${id}`;
   try {
-    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+    const res = await fetch(`https://claryxa-backend-production.up.railway.app${endpoint}`, {
       method: "PATCH",
       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ is_trashed: false })
@@ -1256,7 +1256,7 @@ async function permDelete(id,type){
   if(!token) return;
   const endpoint = type === 'folder' ? `/folders/${id}` : `/documents/${id}`;
   try {
-    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+    const res = await fetch(`https://claryxa-backend-production.up.railway.app${endpoint}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -1349,7 +1349,7 @@ async function performUpload(file){
   if(fid) formData.append('folder_id', fid);
   
   try {
-    const res = await fetch("http://127.0.0.1:8000/documents/upload", {
+    const res = await fetch("https://claryxa-backend-production.up.railway.app/documents/upload", {
       method: "POST",
       headers: { "Authorization": `Bearer ${token}` },
       body: formData
