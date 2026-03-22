@@ -1119,7 +1119,7 @@
     try {
       const token = getToken();
       if (!token) return;
-      const res = await fetch('https://claryxa-backend-production.up.railway.app/analytics/summary', {
+      const res = await fetch(`${API_URL}/analytics/summary/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1199,7 +1199,7 @@
     try {
       const token = getToken();
       if (!token) return;
-      const res = await fetch('https://claryxa-backend-production.up.railway.app/documents/progress', {
+      const res = await fetch(`${API_URL}/documents/progress/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Fetch failed");
@@ -1405,7 +1405,7 @@
         try {
           const token = getToken();
           if (!token) return;
-          await fetch('https://claryxa-backend-production.up.railway.app/analytics/study-time', {
+          await fetch(`${API_URL}/analytics/study-time/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
