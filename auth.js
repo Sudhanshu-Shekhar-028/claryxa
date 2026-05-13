@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1 & 2. Dynamic user profile display
     const email = sessionStorage.getItem('userEmail');
     const name = sessionStorage.getItem('userName');
-    
+
     if (email && name) {
         document.querySelectorAll('#accLoggedIn').forEach(el => el.style.display = 'block');
         document.querySelectorAll('#accLoggedOut').forEach(el => el.style.display = 'none');
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nameEls = document.querySelectorAll('#accName');
         const emailEls = document.querySelectorAll('#accEmail');
         const initialEls = document.querySelectorAll('#accInitial');
-        
+
         nameEls.forEach(el => el.textContent = name);
         emailEls.forEach(el => el.textContent = email);
         initialEls.forEach(el => el.textContent = name.charAt(0).toUpperCase());
@@ -68,12 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Update the live tracking tile date and day on dashboard.html
     const liveDate = document.getElementById('live-date');
     const liveDay = document.getElementById('live-day');
-    
+
     if (liveDate && liveDay) {
         const now = new Date();
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        
+
         liveDate.textContent = `${monthNames[now.getMonth()]} ${now.getDate()}`;
         liveDay.textContent = dayNames[now.getDay()];
     }
